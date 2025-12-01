@@ -5,6 +5,7 @@ import { FiMapPin, FiHome, FiUsers, FiCheck, FiHeart, FiStar, FiMessageCircle } 
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
+import { getErrorMessage } from '../utils/errorHandler';
 
 interface Listing {
   _id: string;
@@ -179,12 +180,7 @@ const ListingDetail = () => {
       fetchReviews();
       fetchListing(); // Refresh để cập nhật rating
     } catch (error: any) {
-      let errorMessage = 'Không thể đánh giá';
-      if (error.response?.data?.error) {
-        errorMessage = typeof error.response.data.error === 'string' 
-          ? error.response.data.error 
-          : String(error.response.data.error);
-      }
+      const errorMessage = getErrorMessage(error, 'Không thể đánh giá');
       toast.error(errorMessage);
     }
   };

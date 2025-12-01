@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '../utils/errorHandler';
 
 interface User {
   id: string;
@@ -87,15 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       toast.success('Đăng nhập thành công!');
     } catch (error: any) {
-      // Ensure error message is always a string
-      let message = 'Đăng nhập thất bại';
-      if (error.response?.data?.error) {
-        message = typeof error.response.data.error === 'string' 
-          ? error.response.data.error 
-          : String(error.response.data.error);
-      } else if (error.message) {
-        message = typeof error.message === 'string' ? error.message : String(error.message);
-      }
+      const message = getErrorMessage(error, 'Đăng nhập thất bại');
       toast.error(message);
       // Throw a new error with string message instead of the original error object
       throw new Error(message);
@@ -114,15 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       toast.success('Đăng ký thành công!');
     } catch (error: any) {
-      // Ensure error message is always a string
-      let message = 'Đăng ký thất bại';
-      if (error.response?.data?.error) {
-        message = typeof error.response.data.error === 'string' 
-          ? error.response.data.error 
-          : String(error.response.data.error);
-      } else if (error.message) {
-        message = typeof error.message === 'string' ? error.message : String(error.message);
-      }
+      const message = getErrorMessage(error, 'Đăng ký thất bại');
       toast.error(message);
       // Throw a new error with string message instead of the original error object
       throw new Error(message);

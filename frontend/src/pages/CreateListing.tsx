@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import MapPicker from '../components/MapPicker';
 import DistrictAutocomplete from '../components/DistrictAutocomplete';
 import { FiUpload, FiX } from 'react-icons/fi';
+import { getErrorMessage } from '../utils/errorHandler';
 
 const CreateListing = () => {
   const navigate = useNavigate();
@@ -141,12 +142,7 @@ const CreateListing = () => {
       navigate(`/listings/${response.data.listing._id}`);
     } catch (error: any) {
       console.error(error);
-      let errorMessage = 'Không thể đăng tin';
-      if (error.response?.data?.error) {
-        errorMessage = typeof error.response.data.error === 'string' 
-          ? error.response.data.error 
-          : String(error.response.data.error);
-      }
+      const errorMessage = getErrorMessage(error, 'Không thể đăng tin');
       toast.error(errorMessage);
     } finally {
       setLoading(false);

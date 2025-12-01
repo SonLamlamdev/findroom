@@ -4,6 +4,7 @@ import { Icon, divIcon } from 'leaflet';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
+import { getErrorMessage } from '../utils/errorHandler';
 import { FiMapPin, FiDollarSign } from 'react-icons/fi';
 import 'leaflet/dist/leaflet.css';
 
@@ -717,12 +718,7 @@ const FloodReportModal = ({ onClose, onSuccess }: FloodReportModalProps) => {
       onSuccess();
     } catch (error: any) {
       console.error('Failed to submit flood report:', error);
-      let errorMessage = 'Không thể gửi báo cáo';
-      if (error.response?.data?.error) {
-        errorMessage = typeof error.response.data.error === 'string' 
-          ? error.response.data.error 
-          : String(error.response.data.error);
-      }
+      const errorMessage = getErrorMessage(error, 'Không thể gửi báo cáo');
       toast.error(errorMessage);
     } finally {
       setLoading(false);

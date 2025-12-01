@@ -4,6 +4,7 @@ import axios from 'axios';
 import { FiSend, FiMessageCircle, FiHome } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '../utils/errorHandler';
 
 interface Conversation {
   _id: string;
@@ -167,18 +168,7 @@ const Messages = () => {
       fetchConversations();
     } catch (error: any) {
       console.error('Failed to create conversation:', error);
-      let errorMessage = 'Không thể tạo cuộc trò chuyện';
-      if (error.response?.data?.error) {
-        errorMessage = typeof error.response.data.error === 'string' 
-          ? error.response.data.error 
-          : String(error.response.data.error);
-      } else if (error.response?.data?.message) {
-        errorMessage = typeof error.response.data.message === 'string' 
-          ? error.response.data.message 
-          : String(error.response.data.message);
-      } else if (error.message) {
-        errorMessage = typeof error.message === 'string' ? error.message : String(error.message);
-      }
+      const errorMessage = getErrorMessage(error, 'Không thể tạo cuộc trò chuyện');
       toast.error(errorMessage);
     }
   };
