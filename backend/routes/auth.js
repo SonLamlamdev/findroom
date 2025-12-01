@@ -15,7 +15,8 @@ router.post('/register', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      const errorMessages = errors.array().map(err => err.msg).join(', ');
+      return res.status(400).json({ error: errorMessages });
     }
 
     const { email, password, name, role, phone } = req.body;
@@ -68,7 +69,8 @@ router.post('/login', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      const errorMessages = errors.array().map(err => err.msg).join(', ');
+      return res.status(400).json({ error: errorMessages });
     }
 
     const { email, password } = req.body;
@@ -81,7 +83,10 @@ router.post('/login', [
 
     // Check if banned
     if (user.isBanned) {
-      return res.status(403).json({ error: 'Account has been banned', reason: user.banReason });
+      const banMessage = user.banReason 
+        ? `Account has been banned: ${user.banReason}`
+        : 'Account has been banned';
+      return res.status(403).json({ error: banMessage });
     }
 
     // Verify password
