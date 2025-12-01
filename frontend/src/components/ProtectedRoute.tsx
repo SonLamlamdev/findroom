@@ -30,3 +30,10 @@ const ProtectedRoute = ({ children, landlordOnly = false }: ProtectedRouteProps)
 
 export default ProtectedRoute;
 
+
+
+
+
+
+
+

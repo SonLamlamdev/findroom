@@ -22,6 +22,19 @@ router.get('/listing/:listingId', async (req, res) => {
 router.post('/', auth, upload.array('images', 5), async (req, res) => {
   try {
     const reviewData = req.body.data ? JSON.parse(req.body.data) : req.body;
+    const User = require('../models/User');
+    
+    // Check if user has stayed at this listing
+    const user = await User.findById(req.userId);
+    const hasStayed = user.stayedListings.some(
+      id => id.toString() === reviewData.listing
+    );
+
+    if (!hasStayed) {
+      return res.status(403).json({ 
+        error: 'Bạn chỉ có thể đánh giá phòng trọ mà bạn đã từng ở. Vui lòng đánh dấu phòng là "đã ở" trước khi đánh giá.' 
+      });
+    }
     
     // Check if user already reviewed this listing
     const existingReview = await Review.findOne({
@@ -30,7 +43,12 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
     });
 
     if (existingReview) {
-      return res.status(400).json({ error: 'You have already reviewed this listing' });
+      return res.status(400).json({ error: 'Bạn đã đánh giá phòng trọ này rồi' });
+    }
+
+    // Validate stayedAt date
+    if (!reviewData.stayedAt) {
+      return res.status(400).json({ error: 'Vui lòng cung cấp ngày bạn đã ở phòng' });
     }
 
     // Process uploaded images
@@ -44,6 +62,7 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
     const review = new Review({
       ...reviewData,
       reviewer: req.userId,
+      stayedAt: new Date(reviewData.stayedAt),
       images
     });
 
@@ -129,4 +148,11 @@ router.post('/:id/response', auth, async (req, res) => {
 });
 
 module.exports = router;
+
+
+
+
+
+
+
 

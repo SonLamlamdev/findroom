@@ -61,3 +61,10 @@ mapDataSchema.index({ coordinates: '2dsphere' });
 
 module.exports = mongoose.model('MapData', mapDataSchema);
 
+
+
+
+
+
+
+

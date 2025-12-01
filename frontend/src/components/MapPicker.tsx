@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import { Icon, LatLng } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -18,11 +18,19 @@ interface MapPickerProps {
   position: { lat: number; lng: number } | null;
   onPositionChange: (position: { lat: number; lng: number }) => void;
   onAddressChange?: (address: string) => void;
+  onDistrictChange?: (district: string) => void;
 }
 
-function LocationMarker({ position, onPositionChange }: { 
+function LocationMarker({ 
+  position, 
+  onPositionChange, 
+  onAddressChange,
+  onDistrictChange
+}: { 
   position: { lat: number; lng: number } | null;
   onPositionChange: (position: { lat: number; lng: number }) => void;
+  onAddressChange?: (address: string) => void;
+  onDistrictChange?: (district: string) => void;
 }) {
   useMapEvents({
     click(e) {
@@ -30,13 +38,52 @@ function LocationMarker({ position, onPositionChange }: {
       onPositionChange(newPosition);
       
       // Reverse geocoding (get address from coordinates)
-      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`)
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}&addressdetails=1`)
         .then(res => res.json())
         .then(data => {
           if (data.display_name) {
+            // Extract address
+            const address = data.display_name || '';
+            
+            // Extract district from address components
+            let district = '';
+            if (data.address) {
+              // Try different possible fields for district
+              district = data.address.district || 
+                        data.address.suburb || 
+                        data.address.city_district ||
+                        data.address.municipality ||
+                        data.address.county ||
+                        '';
+              
+              // If district contains "Quận" or "Huyện", use it as is
+              // Otherwise, try to extract from display_name
+              if (!district) {
+                // Try to extract from display_name: look for "Quận X" or "Huyện Y"
+                const match = address.match(/Quận\s+(\d+|[A-Za-zÀ-ỹ]+)|Huyện\s+([A-Za-zÀ-ỹ]+)/i);
+                if (match) {
+                  district = match[0];
+                }
+              }
+            }
+            
             // Trigger address update in parent component
-            const event = new CustomEvent('addressFound', { detail: data.display_name });
+            const event = new CustomEvent('addressFound', { 
+              detail: { 
+                address: address,
+                district: district,
+                rawData: data
+              } 
+            });
             window.dispatchEvent(event);
+            
+            // Call callbacks if provided
+            if (onAddressChange) {
+              onAddressChange(address);
+            }
+            if (onDistrictChange && district) {
+              onDistrictChange(district);
+            }
           }
         })
         .catch(err => console.error('Geocoding error:', err));
@@ -46,20 +93,29 @@ function LocationMarker({ position, onPositionChange }: {
   return position ? <Marker position={[position.lat, position.lng]} icon={DefaultIcon} /> : null;
 }
 
-const MapPicker = ({ position, onPositionChange, onAddressChange }: MapPickerProps) => {
+const MapPicker = ({ position, onPositionChange, onAddressChange, onDistrictChange }: MapPickerProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
 
   // Listen for address updates
-  useState(() => {
+  useEffect(() => {
     const handleAddressFound = (e: any) => {
-      if (onAddressChange) {
+      if (e.detail && typeof e.detail === 'object') {
+        // New format with address and district
+        if (onAddressChange && e.detail.address) {
+          onAddressChange(e.detail.address);
+        }
+        if (onDistrictChange && e.detail.district) {
+          onDistrictChange(e.detail.district);
+        }
+      } else if (typeof e.detail === 'string' && onAddressChange) {
+        // Old format (backward compatibility)
         onAddressChange(e.detail);
       }
     };
     window.addEventListener('addressFound', handleAddressFound);
     return () => window.removeEventListener('addressFound', handleAddressFound);
-  });
+  }, [onAddressChange, onDistrictChange]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -68,15 +124,38 @@ const MapPicker = ({ position, onPositionChange, onAddressChange }: MapPickerPro
     try {
       // Geocoding (get coordinates from address)
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}, TP.HCM, Vietnam`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}, TP.HCM, Vietnam&addressdetails=1`
       );
       const data = await response.json();
       
       if (data && data.length > 0) {
-        const { lat, lon } = data[0];
+        const { lat, lon, display_name, address } = data[0];
         onPositionChange({ lat: parseFloat(lat), lng: parseFloat(lon) });
+        
+        // Extract district
+        let district = '';
+        if (address) {
+          district = address.district || 
+                    address.suburb || 
+                    address.city_district ||
+                    address.municipality ||
+                    address.county ||
+                    '';
+          
+          // Try to extract from display_name if not found
+          if (!district) {
+            const match = display_name.match(/Quận\s+(\d+|[A-Za-zÀ-ỹ]+)|Huyện\s+([A-Za-zÀ-ỹ]+)/i);
+            if (match) {
+              district = match[0];
+            }
+          }
+        }
+        
         if (onAddressChange) {
-          onAddressChange(data[0].display_name);
+          onAddressChange(display_name);
+        }
+        if (onDistrictChange && district) {
+          onDistrictChange(district);
         }
       } else {
         alert('Không tìm thấy địa chỉ. Vui lòng thử lại!');
@@ -130,7 +209,12 @@ const MapPicker = ({ position, onPositionChange, onAddressChange }: MapPickerPro
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <LocationMarker position={position} onPositionChange={onPositionChange} />
+          <LocationMarker 
+            position={position} 
+            onPositionChange={onPositionChange}
+            onAddressChange={onAddressChange}
+            onDistrictChange={onDistrictChange}
+          />
         </MapContainer>
       </div>
 
@@ -145,4 +229,8 @@ const MapPicker = ({ position, onPositionChange, onAddressChange }: MapPickerPro
 };
 
 export default MapPicker;
+
+
+
+
 

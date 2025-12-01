@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiHeart, FiUser } from 'react-icons/fi';
+import { FiHeart, FiUser, FiMessageCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -24,13 +25,17 @@ interface RoommateMatch {
 
 const RoommateFinder = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [matches, setMatches] = useState<RoommateMatch[]>([]);
+  const [savedRoommateIds, setSavedRoommateIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<RoommateMatch | null>(null);
 
   useEffect(() => {
     if (user) {
       fetchMatches();
+      fetchSavedRoommates();
     }
   }, [user]);
 
@@ -49,7 +54,39 @@ const RoommateFinder = () => {
     }
   };
 
+  const fetchSavedRoommates = async () => {
+    try {
+      const response = await axios.get('/api/roommates/saved/list');
+      const savedIds = response.data.roommates.map((rm: any) => rm._id);
+      setSavedRoommateIds(savedIds);
+    } catch (error) {
+      console.error('Failed to fetch saved roommates:', error);
+    }
+  };
+
+  const handleSaveRoommate = async (roommateId: string) => {
+    try {
+      const response = await axios.post(`/api/roommates/save/${roommateId}`);
+      if (response.data.saved) {
+        setSavedRoommateIds([...savedRoommateIds, roommateId]);
+        toast.success('Đã thêm vào danh sách');
+      } else {
+        setSavedRoommateIds(savedRoommateIds.filter(id => id !== roommateId));
+        toast.success('Đã xóa khỏi danh sách');
+      }
+    } catch (error) {
+      console.error('Failed to save roommate:', error);
+      toast.error('Không thể lưu');
+    }
+  };
+
+  const handleContact = (roommateId: string) => {
+    // Chuyển đến trang messages với recipientId
+    navigate(`/messages/${roommateId}`);
+  };
+
   const formatPrice = (price: number) => {
+    if (!price || price === 0) return '';
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
@@ -160,12 +197,16 @@ const RoommateFinder = () => {
                   )}
 
                   {/* Budget */}
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Ngân sách:</p>
-                    <p className="font-semibold text-primary-600">
-                      {formatPrice(match.user.budget.min)} - {formatPrice(match.user.budget.max)}
-                    </p>
-                  </div>
+                  {match.user.budget && (match.user.budget.min > 0 || match.user.budget.max > 0) && (
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Ngân sách:</p>
+                      <p className="font-semibold text-primary-600">
+                        {match.user.budget.min > 0 ? formatPrice(match.user.budget.min) : 'Không giới hạn'} 
+                        {' - '}
+                        {match.user.budget.max > 0 ? formatPrice(match.user.budget.max) : 'Không giới hạn'}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Interests */}
                   {match.user.interests && match.user.interests.length > 0 && (
@@ -198,22 +239,162 @@ const RoommateFinder = () => {
 
                   {/* Action Buttons */}
                   <div className="flex gap-2">
-                    <button className="flex-1 btn-primary text-sm">
+                    <button 
+                      onClick={() => setSelectedProfile(match)}
+                      className="flex-1 btn-primary text-sm"
+                    >
                       Xem hồ sơ
                     </button>
-                    <button className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <FiHeart />
+                    <button 
+                      onClick={() => handleSaveRoommate(match.user.id)}
+                      className={`p-2 border rounded-lg transition-colors ${
+                        savedRoommateIds.includes(match.user.id)
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-600'
+                          : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                      title={savedRoommateIds.includes(match.user.id) ? 'Đã lưu' : 'Lưu vào danh sách'}
+                    >
+                      <FiHeart className={savedRoommateIds.includes(match.user.id) ? 'fill-current' : ''} />
                     </button>
                   </div>
+                  {savedRoommateIds.includes(match.user.id) && (
+                    <p className="text-xs text-red-600 mt-1 text-center">Đã thêm vào danh sách</p>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Profile Modal */}
+      {selectedProfile && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">Hồ sơ {selectedProfile.user.name}</h2>
+                <button
+                  onClick={() => setSelectedProfile(null)}
+                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Avatar & Basic Info */}
+                <div className="flex items-center gap-4">
+                  {selectedProfile.user.avatar ? (
+                    <img
+                      src={selectedProfile.user.avatar}
+                      alt={selectedProfile.user.name}
+                      className="w-24 h-24 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                      <FiUser size={40} className="text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="text-xl font-bold">{selectedProfile.user.name}</h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {selectedProfile.user.university} - {selectedProfile.user.major}
+                    </p>
+                    <div className={`inline-block mt-2 px-3 py-1 rounded-full ${
+                      selectedProfile.compatibilityScore >= 80 
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                        : selectedProfile.compatibilityScore >= 60
+                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                    }`}>
+                      Độ phù hợp: {selectedProfile.compatibilityScore}%
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bio */}
+                {selectedProfile.user.bio && (
+                  <div>
+                    <h4 className="font-bold mb-2">Giới thiệu</h4>
+                    <p className="text-gray-700 dark:text-gray-300">{selectedProfile.user.bio}</p>
+                  </div>
+                )}
+
+                {/* Budget */}
+                {selectedProfile.user.budget && (selectedProfile.user.budget.min > 0 || selectedProfile.user.budget.max > 0) && (
+                  <div>
+                    <h4 className="font-bold mb-2">Ngân sách</h4>
+                    <p className="text-primary-600 font-semibold">
+                      {selectedProfile.user.budget.min > 0 ? formatPrice(selectedProfile.user.budget.min) : 'Không giới hạn'} 
+                      {' - '}
+                      {selectedProfile.user.budget.max > 0 ? formatPrice(selectedProfile.user.budget.max) : 'Không giới hạn'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Interests */}
+                {selectedProfile.user.interests && selectedProfile.user.interests.length > 0 && (
+                  <div>
+                    <h4 className="font-bold mb-2">Sở thích</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProfile.user.interests.map((interest, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm"
+                        >
+                          {interest}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Match Reasons */}
+                {selectedProfile.matchReasons.length > 0 && (
+                  <div>
+                    <h4 className="font-bold mb-2">Lý do phù hợp</h4>
+                    <ul className="space-y-1">
+                      {selectedProfile.matchReasons.map((reason, index) => (
+                        <li key={index} className="text-gray-700 dark:text-gray-300">• {reason}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={() => setSelectedProfile(null)}
+                    className="flex-1 btn-secondary"
+                  >
+                    Đóng
+                  </button>
+                  <button 
+                    onClick={() => {
+                      handleContact(selectedProfile.user.id);
+                      setSelectedProfile(null);
+                    }}
+                    className="flex-1 btn-primary flex items-center justify-center gap-2"
+                  >
+                    <FiMessageCircle />
+                    Liên hệ
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default RoommateFinder;
+
+
+
+
+
+
+
 

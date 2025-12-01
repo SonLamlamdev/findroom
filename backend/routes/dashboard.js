@@ -168,3 +168,10 @@ router.get('/listing/:id/analytics', auth, isLandlord, async (req, res) => {
 
 module.exports = router;
 
+
+
+
+
+
+
+

@@ -15,6 +15,10 @@ const reviewSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  stayedAt: {
+    type: Date, // Date when user stayed at the listing
+    required: true
+  },
   rating: {
     overall: {
       type: Number,
@@ -57,4 +61,5 @@ const reviewSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('Review', reviewSchema);
+
 

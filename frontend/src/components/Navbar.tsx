@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { FiSun, FiMoon, FiMenu, FiX, FiUser, FiHeart, FiGrid } from 'react-icons/fi';
+import { FiSun, FiMoon, FiMenu, FiX, FiUser, FiHeart, FiGrid, FiMessageCircle, FiShield } from 'react-icons/fi';
 import { useState } from 'react';
 
 const Navbar = () => {
@@ -38,9 +38,23 @@ const Navbar = () => {
             <Link to="/map" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
               {t('nav.map')}
             </Link>
-            <Link to="/roommate-finder" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
-              {t('nav.roommate')}
-            </Link>
+            {/* Chỉ hiện "Tìm bạn cùng phòng" cho người thuê */}
+            {(!user || user.role === 'tenant') && (
+              <Link to="/roommate-finder" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
+                {t('nav.roommate')}
+              </Link>
+            )}
+            {/* Tính năng đặc trưng cho chủ trọ */}
+            {user && (user.role === 'landlord' || user.role === 'admin') && (
+              <>
+                <Link to="/create-listing" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
+                  Đăng bài
+                </Link>
+                <Link to="/dashboard" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
+                  Thống kê
+                </Link>
+              </>
+            )}
             <Link to="/blog" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
               {t('nav.blog')}
             </Link>
@@ -100,6 +114,40 @@ const Navbar = () => {
                     >
                       <FiHeart className="inline mr-2" /> {t('nav.saved')}
                     </Link>
+                    <Link
+                      to="/messages"
+                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      <FiMessageCircle className="inline mr-2" /> Tin nhắn
+                    </Link>
+                    {user.role === 'tenant' && (
+                      <>
+                        <Link
+                          to="/saved-roommates"
+                          className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <FiHeart className="inline mr-2" /> Đã lưu ghép trọ
+                        </Link>
+                        <Link
+                          to="/stayed"
+                          className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          Phòng đã ở
+                        </Link>
+                      </>
+                    )}
+                    {user.role === 'admin' && (
+                      <Link
+                        to="/admin"
+                        className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <FiShield className="inline mr-2" /> Quản trị
+                      </Link>
+                    )}
                     {(user.role === 'landlord' || user.role === 'admin') && (
                       <Link
                         to="/dashboard"
@@ -161,13 +209,33 @@ const Navbar = () => {
             >
               {t('nav.map')}
             </Link>
-            <Link
-              to="/roommate-finder"
-              className="block py-2 text-gray-700 dark:text-gray-300"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {t('nav.roommate')}
-            </Link>
+            {(!user || user.role === 'tenant') && (
+              <Link
+                to="/roommate-finder"
+                className="block py-2 text-gray-700 dark:text-gray-300"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t('nav.roommate')}
+              </Link>
+            )}
+            {user && (user.role === 'landlord' || user.role === 'admin') && (
+              <>
+                <Link
+                  to="/create-listing"
+                  className="block py-2 text-gray-700 dark:text-gray-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Đăng bài
+                </Link>
+                <Link
+                  to="/dashboard"
+                  className="block py-2 text-gray-700 dark:text-gray-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Thống kê
+                </Link>
+              </>
+            )}
             <Link
               to="/blog"
               className="block py-2 text-gray-700 dark:text-gray-300"
@@ -201,4 +269,11 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+
+
+
+
+
+
 

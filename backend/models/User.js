@@ -77,6 +77,19 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Listing'
   }],
+  stayedListings: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Listing'
+  }],
+  savedRoommates: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'other', ''],
+    default: ''
+  },
   preferences: {
     language: {
       type: String,
@@ -87,6 +100,13 @@ const userSchema = new mongoose.Schema({
       enum: ['light', 'dark'],
       default: 'light'
     }
+  },
+  // Trust score cho flood reports (tăng khi report được xác nhận)
+  floodReportTrustScore: {
+    type: Number,
+    default: 1,
+    min: 1,
+    max: 5
   }
 }, {
   timestamps: true
@@ -111,4 +131,5 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 };
 
 module.exports = mongoose.model('User', userSchema);
+
 

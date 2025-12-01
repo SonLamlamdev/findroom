@@ -7,13 +7,28 @@ const upload = require('../middleware/upload');
 // Get all blogs
 router.get('/', async (req, res) => {
   try {
-    const { category, search, page = 1, limit = 10 } = req.query;
+    const { 
+      category, 
+      search, 
+      tag,
+      sort = '-createdAt', // -createdAt, -likes, -views, -rating
+      page = 1, 
+      limit = 10 
+    } = req.query;
+    
     const query = { published: true };
 
+    // Filter by category
     if (category) {
       query.category = category;
     }
 
+    // Filter by tag
+    if (tag) {
+      query.tags = { $in: [new RegExp(tag, 'i')] };
+    }
+
+    // Search by keyword
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -22,16 +37,39 @@ router.get('/', async (req, res) => {
       ];
     }
 
+    // Sort options
+    let sortOption = '-createdAt';
+    if (sort === 'likes') sortOption = '-likes';
+    else if (sort === 'views') sortOption = '-views';
+    else if (sort === 'rating') sortOption = '-rating';
+    else if (sort === 'newest') sortOption = '-createdAt';
+    else if (sort === 'oldest') sortOption = 'createdAt';
+
     const blogs = await Blog.find(query)
       .populate('author', 'name avatar')
-      .sort('-createdAt')
+      .sort(sortOption)
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit));
+
+    // Calculate rating for each blog (based on likes/views ratio)
+    const blogsWithRating = blogs.map(blog => {
+      const blogObj = blog.toObject();
+      // Simple rating: likes / (views + 1) * 5
+      blogObj.rating = blog.views > 0 
+        ? (blog.likes.length / (blog.views + 1)) * 5 
+        : 0;
+      return blogObj;
+    });
+
+    // Re-sort if sort by rating
+    if (sort === 'rating') {
+      blogsWithRating.sort((a, b) => b.rating - a.rating);
+    }
 
     const total = await Blog.countDocuments(query);
 
     res.json({
-      blogs,
+      blogs: sort === 'rating' ? blogsWithRating : blogs,
       pagination: {
         page: Number(page),
         limit: Number(limit),
@@ -40,6 +78,7 @@ router.get('/', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -187,4 +226,11 @@ router.post('/:id/comments', auth, async (req, res) => {
 });
 
 module.exports = router;
+
+
+
+
+
+
+
 

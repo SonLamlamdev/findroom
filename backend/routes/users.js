@@ -101,8 +101,49 @@ router.post('/saved-listings/:listingId', auth, async (req, res) => {
 // Get saved listings
 router.get('/saved-listings', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).populate('savedListings');
+    const user = await User.findById(req.userId).populate({
+      path: 'savedListings',
+      populate: { path: 'landlord', select: 'name avatar verifiedBadge' }
+    });
     res.json({ listings: user.savedListings });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Mark listing as stayed (user đã từng ở)
+router.post('/stayed-listings/:listingId', auth, async (req, res) => {
+  try {
+    const { stayedAt } = req.body; // Date when user stayed
+    const user = await User.findById(req.userId);
+    const listingId = req.params.listingId;
+    
+    const index = user.stayedListings.indexOf(listingId);
+    
+    if (index === -1) {
+      user.stayedListings.push(listingId);
+      await user.save();
+      res.json({ 
+        message: 'Listing marked as stayed', 
+        stayed: true,
+        stayedAt: stayedAt || new Date()
+      });
+    } else {
+      res.json({ message: 'Listing already marked as stayed', stayed: true });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get stayed listings
+router.get('/stayed-listings', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).populate({
+      path: 'stayedListings',
+      populate: { path: 'landlord', select: 'name avatar verifiedBadge' }
+    });
+    res.json({ listings: user.stayedListings });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -147,4 +188,11 @@ router.post('/unban/:userId', auth, isAdmin, async (req, res) => {
 });
 
 module.exports = router;
+
+
+
+
+
+
+
 

@@ -101,3 +101,10 @@ async function createNotification(userId, type, title, message, link, data) {
 module.exports = router;
 module.exports.createNotification = createNotification;
 
+
+
+
+
+
+
+

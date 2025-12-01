@@ -21,7 +21,8 @@
     "socket.io-client": "^4.6.0",
     "react-hot-toast": "^2.4.1",
     "date-fns": "^2.30.0",
-    "recharts": "^2.10.3"
+    "recharts": "^2.10.3",
+    "h3-js": "^4.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
@@ -35,4 +36,11 @@
     "postcss": "^8.4.32"
   }
 }
+
+
+
+
+
+
+
 

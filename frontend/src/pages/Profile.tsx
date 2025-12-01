@@ -9,7 +9,8 @@ const Profile = () => {
   const [profileData, setProfileData] = useState({
     name: '',
     phone: '',
-    email: ''
+    email: '',
+    gender: ''
   });
   const [roommateProfile, setRoommateProfile] = useState({
     university: '',
@@ -36,7 +37,8 @@ const Profile = () => {
       setProfileData({
         name: user.name,
         phone: user.phone || '',
-        email: user.email
+        email: user.email,
+        gender: (user as any).gender || ''
       });
     }
   }, [user]);
@@ -125,6 +127,20 @@ const Profile = () => {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium mb-2">Giới tính</label>
+              <select
+                className="input"
+                value={profileData.gender}
+                onChange={(e) => setProfileData({ ...profileData, gender: e.target.value })}
+              >
+                <option value="">Không xác định</option>
+                <option value="male">Nam</option>
+                <option value="female">Nữ</option>
+                <option value="other">Khác</option>
+              </select>
+            </div>
+
             <button type="submit" className="btn-primary">
               Lưu thay đổi
             </button>
@@ -193,28 +209,36 @@ const Profile = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Ngân sách tối thiểu</label>
+                <label className="block text-sm font-medium mb-2">Ngân sách tối thiểu (VNĐ/tháng)</label>
                 <input
                   type="number"
                   className="input"
-                  value={roommateProfile.budget.min}
-                  onChange={(e) => setRoommateProfile({
-                    ...roommateProfile,
-                    budget: { ...roommateProfile.budget, min: Number(e.target.value) }
-                  })}
+                  value={roommateProfile.budget.min || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setRoommateProfile({
+                      ...roommateProfile,
+                      budget: { ...roommateProfile.budget, min: value ? Number(value) : 0 }
+                    });
+                  }}
+                  placeholder="Nhập số tiền"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Ngân sách tối đa</label>
+                <label className="block text-sm font-medium mb-2">Ngân sách tối đa (VNĐ/tháng)</label>
                 <input
                   type="number"
                   className="input"
-                  value={roommateProfile.budget.max}
-                  onChange={(e) => setRoommateProfile({
-                    ...roommateProfile,
-                    budget: { ...roommateProfile.budget, max: Number(e.target.value) }
-                  })}
+                  value={roommateProfile.budget.max || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setRoommateProfile({
+                      ...roommateProfile,
+                      budget: { ...roommateProfile.budget, max: value ? Number(value) : 0 }
+                    });
+                  }}
+                  placeholder="Nhập số tiền"
                 />
               </div>
             </div>
@@ -230,4 +254,11 @@ const Profile = () => {
 };
 
 export default Profile;
+
+
+
+
+
+
+
 

@@ -30,8 +30,15 @@ const listingSchema = new mongoose.Schema({
     district: String,
     city: String,
     coordinates: {
-      lat: Number,
-      lng: Number
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point'
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude] - GeoJSON format
+        required: true
+      }
     },
     nearbyUniversities: [{
       name: String,
@@ -120,9 +127,51 @@ const listingSchema = new mongoose.Schema({
       type: Number,
       default: 0
     }
+  },
+  // Custom ID for easy management
+  customId: {
+    type: String,
+    unique: true,
+    sparse: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: {
+    transform: function(doc, ret) {
+      // Convert GeoJSON coordinates to {lat, lng} format for frontend
+      if (ret.location?.coordinates?.coordinates && Array.isArray(ret.location.coordinates.coordinates)) {
+        const [lng, lat] = ret.location.coordinates.coordinates;
+        ret.location.coordinates = { lat, lng };
+      }
+      // Remove internal fields
+      delete ret.__v;
+      return ret;
+    }
+  },
+  toObject: {
+    transform: function(doc, ret) {
+      // Convert GeoJSON coordinates to {lat, lng} format for frontend
+      if (ret.location?.coordinates?.coordinates && Array.isArray(ret.location.coordinates.coordinates)) {
+        const [lng, lat] = ret.location.coordinates.coordinates;
+        ret.location.coordinates = { lat, lng };
+      }
+      // Remove internal fields
+      delete ret.__v;
+      return ret;
+    }
+  }
+});
+
+// Generate custom ID before saving
+listingSchema.pre('save', async function(next) {
+  if (!this.customId) {
+    // Generate ID: LIST-YYYYMMDD-XXXX
+    const date = new Date();
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    this.customId = `LIST-${dateStr}-${random}`;
+  }
+  next();
 });
 
 // Indexes for better search performance
@@ -130,6 +179,9 @@ listingSchema.index({ 'location.coordinates': '2dsphere' });
 listingSchema.index({ price: 1 });
 listingSchema.index({ status: 1 });
 listingSchema.index({ title: 'text', description: 'text' });
+listingSchema.index({ amenities: 1 });
+// Note: customId already has an index from unique: true, no need to add it again
 
 module.exports = mongoose.model('Listing', listingSchema);
+
 

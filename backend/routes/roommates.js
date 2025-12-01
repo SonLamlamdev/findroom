@@ -128,5 +128,57 @@ router.get('/:userId', async (req, res) => {
   }
 });
 
+// Save/unsave roommate
+router.post('/save/:userId', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    const roommateId = req.params.userId;
+    
+    if (user._id.toString() === roommateId) {
+      return res.status(400).json({ error: 'Cannot save yourself' });
+    }
+    
+    const index = user.savedRoommates.indexOf(roommateId);
+    
+    if (index > -1) {
+      user.savedRoommates.splice(index, 1);
+      await user.save();
+      res.json({ message: 'Roommate removed from saved', saved: false });
+    } else {
+      user.savedRoommates.push(roommateId);
+      await user.save();
+      res.json({ message: 'Roommate saved', saved: true });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get saved roommates
+router.get('/saved/list', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).populate({
+      path: 'savedRoommates',
+      select: 'name avatar roommateProfile',
+      match: { 'roommateProfile.lookingForRoommate': true }
+    });
+    
+    const savedRoommates = user.savedRoommates.filter(rm => rm !== null);
+    
+    res.json({ roommates: savedRoommates });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
+
+
+
+
+
+
+
 

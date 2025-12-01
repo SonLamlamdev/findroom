@@ -44,3 +44,10 @@ const isAdmin = (req, res, next) => {
 
 module.exports = { auth, isLandlord, isAdmin };
 
+
+
+
+
+
+
+

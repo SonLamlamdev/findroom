@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import MapPicker from '../components/MapPicker';
+import DistrictAutocomplete from '../components/DistrictAutocomplete';
 import { FiUpload, FiX } from 'react-icons/fi';
 
 const CreateListing = () => {
@@ -357,12 +358,9 @@ const CreateListing = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Quận/Huyện *</label>
-                  <input
-                    type="text"
-                    required
-                    className="input"
+                  <DistrictAutocomplete
                     value={formData.district}
-                    onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                    onChange={(district) => setFormData({ ...formData, district })}
                     placeholder="Quận 1, Quận 2..."
                   />
                 </div>
@@ -383,9 +381,13 @@ const CreateListing = () => {
               position={formData.coordinates}
               onPositionChange={(pos) => setFormData({ ...formData, coordinates: pos })}
               onAddressChange={(addr) => {
-                // Auto-fill address if empty
-                if (!formData.address) {
-                  setFormData({ ...formData, address: addr });
+                // Auto-fill address when user selects location on map
+                setFormData((prev) => ({ ...prev, address: addr }));
+              }}
+              onDistrictChange={(district) => {
+                // Auto-fill district when user selects location on map
+                if (district) {
+                  setFormData((prev) => ({ ...prev, district: district }));
                 }
               }}
             />

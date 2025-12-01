@@ -9,6 +9,9 @@ interface BlogPost {
   title: string;
   content: string;
   category: string;
+  tags?: string[];
+  customId?: string;
+  rating?: number;
   author: {
     name: string;
     avatar?: string;
@@ -25,6 +28,10 @@ const Blog = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState('');
+  const [sortBy, setSortBy] = useState('-createdAt');
+  const [allTags, setAllTags] = useState<string[]>([]);
 
   const categories = [
     { value: '', label: 'Tất cả' },
@@ -37,12 +44,17 @@ const Blog = () => {
 
   useEffect(() => {
     fetchPosts();
-  }, [selectedCategory]);
+    fetchAllTags();
+  }, [selectedCategory, searchQuery, selectedTag, sortBy]);
 
   const fetchPosts = async () => {
     try {
+      setLoading(true);
       const params = new URLSearchParams();
       if (selectedCategory) params.append('category', selectedCategory);
+      if (searchQuery) params.append('search', searchQuery);
+      if (selectedTag) params.append('tag', selectedTag);
+      if (sortBy) params.append('sort', sortBy);
 
       const response = await axios.get(`/api/blogs?${params.toString()}`);
       setPosts(response.data.blogs);
@@ -50,6 +62,21 @@ const Blog = () => {
       console.error('Failed to fetch blogs:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllTags = async () => {
+    try {
+      const response = await axios.get('/api/blogs');
+      const allTagsSet = new Set<string>();
+      response.data.blogs.forEach((blog: BlogPost) => {
+        if (blog.tags) {
+          blog.tags.forEach(tag => allTagsSet.add(tag));
+        }
+      });
+      setAllTags(Array.from(allTagsSet));
+    } catch (error) {
+      console.error('Failed to fetch tags:', error);
     }
   };
 
@@ -87,21 +114,79 @@ const Blog = () => {
         )}
       </div>
 
-      {/* Category Filter */}
-      <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-        {categories.map((category) => (
-          <button
-            key={category.value}
-            onClick={() => setSelectedCategory(category.value)}
-            className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
-              selectedCategory === category.value
-                ? 'bg-primary-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
+      {/* Search and Sort Bar */}
+      <div className="card p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <input
+            type="text"
+            placeholder="Tìm kiếm bài viết..."
+            className="input md:col-span-2"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && fetchPosts()}
+          />
+          <select
+            className="input"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
           >
-            {category.label}
+            <option value="-createdAt">Mới nhất</option>
+            <option value="createdAt">Cũ nhất</option>
+            <option value="likes">Nhiều like nhất</option>
+            <option value="views">Nhiều lượt xem nhất</option>
+            <option value="rating">Đánh giá cao nhất</option>
+          </select>
+          <button onClick={fetchPosts} className="btn-primary">
+            Tìm kiếm
           </button>
-        ))}
+        </div>
+
+        {/* Category Filter */}
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+          {categories.map((category) => (
+            <button
+              key={category.value}
+              onClick={() => setSelectedCategory(category.value)}
+              className={`px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
+                selectedCategory === category.value
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              {category.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tags Filter */}
+        {allTags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <span className="text-sm text-gray-600 dark:text-gray-400 self-center mr-2">Tags:</span>
+            <button
+              onClick={() => setSelectedTag('')}
+              className={`px-3 py-1 rounded-full text-sm transition-all ${
+                selectedTag === ''
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              Tất cả
+            </button>
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setSelectedTag(tag)}
+                className={`px-3 py-1 rounded-full text-sm transition-all ${
+                  selectedTag === tag
+                    ? 'bg-primary-600 text-white shadow-md'
+                    : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Blog Posts */}
@@ -130,10 +215,24 @@ const Blog = () => {
 
               {/* Content */}
               <div className="p-6">
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
                   <span className={`text-xs px-2 py-1 rounded ${getCategoryBadgeColor(post.category)}`}>
                     {getCategoryLabel(post.category)}
                   </span>
+                  {post.customId && (
+                    <span className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                      ID: {post.customId}
+                    </span>
+                  )}
+                  {post.tags && post.tags.length > 0 && (
+                    <div className="flex gap-1 flex-wrap">
+                      {post.tags.slice(0, 2).map((tag, idx) => (
+                        <span key={idx} className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <h3 className="text-lg font-semibold mb-2 line-clamp-2">
@@ -160,6 +259,11 @@ const Blog = () => {
                   </div>
 
                   <div className="flex items-center gap-3 text-gray-500">
+                    {post.rating && post.rating > 0 && (
+                      <span className="flex items-center text-yellow-500">
+                        ⭐ {post.rating.toFixed(1)}
+                      </span>
+                    )}
                     <span className="flex items-center">
                       <FiHeart size={14} className="mr-1" />
                       {post.likes.length}
@@ -192,4 +296,11 @@ const Blog = () => {
 };
 
 export default Blog;
+
+
+
+
+
+
+
 

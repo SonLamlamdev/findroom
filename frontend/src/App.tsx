@@ -19,6 +19,10 @@ import BlogPost from './pages/BlogPost';
 import CreateBlog from './pages/CreateBlog';
 import Profile from './pages/Profile';
 import SavedListings from './pages/SavedListings';
+import StayedListings from './pages/StayedListings';
+import SavedRoommates from './pages/SavedRoommates';
+import Messages from './pages/Messages';
+import AdminPanel from './pages/AdminPanel';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -71,6 +75,36 @@ function App() {
                     <SavedListings />
                   </ProtectedRoute>
                 } />
+                <Route path="/stayed" element={
+                  <ProtectedRoute>
+                    <StayedListings />
+                  </ProtectedRoute>
+                } />
+                <Route path="/saved-roommates" element={
+                  <ProtectedRoute>
+                    <SavedRoommates />
+                  </ProtectedRoute>
+                } />
+                <Route path="/messages" element={
+                  <ProtectedRoute>
+                    <Messages />
+                  </ProtectedRoute>
+                } />
+                <Route path="/messages/:listingId/:recipientId" element={
+                  <ProtectedRoute>
+                    <Messages />
+                  </ProtectedRoute>
+                } />
+                <Route path="/messages/:recipientId" element={
+                  <ProtectedRoute>
+                    <Messages />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin" element={
+                  <ProtectedRoute>
+                    <AdminPanel />
+                  </ProtectedRoute>
+                } />
               </Routes>
             </main>
             <Footer />
@@ -83,4 +117,11 @@ function App() {
 }
 
 export default App;
+
+
+
+
+
+
+
 
