@@ -33,6 +33,9 @@ const server = http.createServer(app);
 const socketIoOptions = {
   cors: {
     origin: function (origin, callback) {
+      if (origin === "https://student-accommodation-frontend.onrender.com") {
+        return callback(null, true);
+      }
       // Allow requests without origin
       if (!origin) return callback(null, true);
       
@@ -88,7 +91,8 @@ const io = socketIo(server, socketIoOptions);
 const allowedOrigins = [
   "http://localhost:5173",             // <--- Đã thêm Vite Localhost vào đây
   "http://localhost:3000",             // Thêm dự phòng
-  process.env.CLIENT_URL               // Link chính thức trên Vercel
+  process.env.CLIENT_URL,           // Link chính thức trên Vercel
+  "https://student-accommodation-frontend.onrender.com"
 ];
 
 const corsOptions = {
