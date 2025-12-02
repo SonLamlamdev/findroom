@@ -94,7 +94,8 @@ const allowedOrigins = [
   "http://localhost:5173",             // <--- Đã thêm Vite Localhost vào đây
   "http://localhost:3000",             // Thêm dự phòng
   process.env.CLIENT_URL,           // Link chính thức trên Vercel
-  "https://student-accommodation-frontend.onrender.com"
+  "https://student-accommodation-frontend.onrender.com",
+  "https://student-accommodation-backend.onrender.com" // optional
 ];
 
 const corsOptions = {
@@ -156,7 +157,15 @@ console.log('  - Allowed: localhost, CLIENT_URL, *.vercel.app' + (isDevelopment 
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // server-to-server
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    console.log("Blocked CORS origin:", origin);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
