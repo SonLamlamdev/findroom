@@ -154,8 +154,11 @@ console.log('  - Allowed: localhost, CLIENT_URL, *.vercel.app' + (isDevelopment 
 
 // Middleware
 app.use(helmet());
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.use(cors({
+  origin: 'https://student-accommodation-frontend.onrender.com',
+  credentials: true
+}));
+app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
@@ -198,7 +201,12 @@ app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' });
+  try {
+    res.json({ status: 'OK', message: 'Server is running' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Error handling middleware
