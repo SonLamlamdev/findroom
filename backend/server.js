@@ -37,7 +37,9 @@ const socketIoOptions = {
         return callback(null, true);
       }
       // Allow requests without origin
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true); // allow server-to-server or Postman
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error('Not allowed by CORS'));
       
       // Allow localhost
       if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
