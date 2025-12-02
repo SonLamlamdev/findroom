@@ -76,7 +76,7 @@
 
     const login = async (email: string, password: string) => {
       try {
-        const response = await axios.post('/auth/login', { email, password });
+        const response = await axios.post('/api/auth/login', { email, password });
         const { token: newToken, user: userData } = response.data;
         
         localStorage.setItem('token', newToken);
