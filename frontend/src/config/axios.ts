@@ -4,7 +4,7 @@ import axios from 'axios';
 // In production, VITE_API_URL must be set to the backend URL
 // In development, use localhost or the proxy will handle it
 const getApiUrl = () => {
-  return '';
+  return 'https://findroom-production.up.railway.app';
   /*// Check if we're in production
   const isProduction = import.meta.env.PROD;
   
