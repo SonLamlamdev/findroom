@@ -474,9 +474,10 @@ Deploy lên:
    - Redeploy lại frontend sau khi thay đổi
 
 2. **Kiểm tra Backend đang chạy:**
-   - Mở URL backend trong browser (VD: `https://your-app.railway.app/api/health`)
+   - Mở URL backend trong browser (VD: `https://findroom-qd83.onrender.com/api/health`)
    - Nếu thấy `{"status":"OK","message":"Server is running"}` → Backend OK
    - Nếu không truy cập được → Backend đã bị tắt hoặc chưa deploy
+   - **Lưu ý:** Render free tier có thể sleep sau 15 phút không có traffic, cần "đánh thức" bằng cách gửi request
 
 3. **Kiểm tra Console trong Browser:**
    - Mở Developer Tools (F12) → Console tab
@@ -489,13 +490,20 @@ Deploy lên:
 
 **Ví dụ cấu hình đúng:**
 ```
-VITE_API_URL=https://student-accommodation-backend.railway.app
+VITE_API_URL=https://findroom-qd83.onrender.com
 ```
 KHÔNG phải:
 ```
-VITE_API_URL=https://student-accommodation-backend.railway.app/  ❌ (có dấu / ở cuối)
-VITE_API_URL=student-accommodation-backend.railway.app  ❌ (thiếu https://)
+VITE_API_URL=https://findroom-qd83.onrender.com/  ❌ (có dấu / ở cuối)
+VITE_API_URL=findroom-qd83.onrender.com  ❌ (thiếu https://)
+VITE_API_URL=http://findroom-qd83.onrender.com  ❌ (dùng http thay vì https)
 ```
+
+**Trên Render (Backend), cần cấu hình:**
+```
+CLIENT_URL=https://your-frontend-url.vercel.app
+```
+(Thay `your-frontend-url.vercel.app` bằng URL frontend thực tế của bạn)
 
 ### Build failed
 1. Kiểm tra Node.js version (>= 16)

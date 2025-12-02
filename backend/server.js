@@ -36,11 +36,19 @@ const io = socketIo(server, {
 });
 
 // CORS configuration
+// Backend URL: https://findroom-qd83.onrender.com
+// Frontend URL: https://findroom2-sonlamlamdevs-projects.vercel.app
+// Frontend URL should be set in CLIENT_URL environment variable on Render
 const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:5173',
+  process.env.CLIENT_URL, // Frontend URL from environment variable (set on Render)
   'http://localhost:5173', // Development
-  'https://findroom-qd83.onrender.com' // Frontend URL
+  'https://findroom2-sonlamlamdevs-projects.vercel.app' // Frontend URL (fallback)
 ].filter(Boolean); // Remove any undefined/null values
+
+// Log allowed origins on startup for debugging
+console.log('🌐 CORS Allowed Origins:', allowedOrigins.length > 0 ? allowedOrigins : 'None configured (using default)');
+console.log('🔗 Backend URL: https://findroom-qd83.onrender.com');
+console.log('🔗 Frontend URL (CLIENT_URL):', process.env.CLIENT_URL || 'Not set');
 
 const corsOptions = {
   origin: function (origin, callback) {
