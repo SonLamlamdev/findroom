@@ -183,8 +183,6 @@ app.use('/api/', limiter);
 
 //PROXY FIX
 app.use(express.json());
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/uploads', require('./routes/upload'));
 
 // Socket.io for real-time notifications
 io.on('connection', (socket) => {
