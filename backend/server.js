@@ -158,13 +158,8 @@ console.log('  - Allowed: localhost, CLIENT_URL, *.vercel.app' + (isDevelopment 
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // server-to-server
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    console.log("Blocked CORS origin:", origin);
-    return callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
+  origin: 'https://student-accommodation-frontend.onrender.com', // your frontend URL
+  credentials: true, // if using cookies/auth
 }));
 app.options('*', cors());
 app.use(express.json());
