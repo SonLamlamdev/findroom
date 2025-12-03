@@ -86,8 +86,17 @@ router.get('/', async (req, res) => {
 
     const total = await Listing.countDocuments(query);
 
+    const listingsWithImages = listings.map(l => {
+      const obj = l.toObject();
+      return {
+        ...obj,
+        images: Array.isArray(obj.images) ? obj.images : [],
+      };
+    });
+      
+
     res.json({
-      listings,
+      listings: listingsWithImages,
       pagination: {
         page: Number(page),
         limit: Number(limit),
