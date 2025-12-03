@@ -182,7 +182,7 @@ router.post('/', auth, isLandlord, upload.array('media', 10), async (req, res) =
       req.files.forEach(file => {
         const filePath = `/uploads/${file.filename}`;
         if (file.mimetype.startsWith('image')) {
-          images.push(filePath);
+          images.push(file.filename);
         } else if (file.mimetype.startsWith('video')) {
           videos.push(filePath);
         }

@@ -135,6 +135,9 @@ const corsOptions = {
     if (origin.endsWith('.vercel.app')) {
       return callback(null, true);
     }
+    if (origin.endsWith('.onrender.com')) {
+      return callback(null, true);
+    }
     
     // Nếu không khớp cái nào thì chặn và Log ra để debug
     console.log('⚠️  CORS blocked origin:', origin);
