@@ -98,7 +98,7 @@ const Listings = () => {
   const fetchSavedListings = async () => {
     try {
       const response = await axios.get('/api/users/saved-listings');
-      const savedIds = response.data.listings.map((listing: Listing) => listing._id);
+      const savedIds = (response.data.listings || []).map((listing: Listing) => listing._id);
       setSavedListingIds(savedIds);
     } catch (error) {
       console.error('Failed to fetch saved listings:', error);
@@ -289,9 +289,9 @@ const Listings = () => {
             >
               {/* Image */}
               <div className="relative h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                {listing.images[0] ? (
+                {listing.images && listing.images.length > 0 ? (
                   <img
-                    src={listing.images[0]}
+                    src={`${import.meta.env.VITE_API_URL}/uploads/${listing.images[0]}`}
                     alt={listing.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />
@@ -300,7 +300,7 @@ const Listings = () => {
                     <FiHome size={48} className="text-gray-400" />
                   </div>
                 )}
-                
+                  
                 {/* Save Button */}
                 {user && (
                   <button

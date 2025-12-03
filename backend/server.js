@@ -33,8 +33,13 @@ const server = http.createServer(app);
 const socketIoOptions = {
   cors: {
     origin: function (origin, callback) {
+      if (origin === "https://student-accommodation-frontend.onrender.com") {
+        return callback(null, true);
+      }
       // Allow requests without origin
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true); // allow server-to-server or Postman
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error('Not allowed by CORS'));
       
       // Allow localhost
       if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
@@ -68,7 +73,7 @@ const socketIoOptions = {
       callback(new Error('Not allowed by CORS'));
     },
     methods: ['GET', 'POST'],
-    credentials: true
+    credentials: false
   }
 };
 
@@ -88,7 +93,9 @@ const io = socketIo(server, socketIoOptions);
 const allowedOrigins = [
   "http://localhost:5173",             // <--- Đã thêm Vite Localhost vào đây
   "http://localhost:3000",             // Thêm dự phòng
-  process.env.CLIENT_URL               // Link chính thức trên Vercel
+  process.env.CLIENT_URL,           // Link chính thức trên Vercel
+  "https://student-accommodation-frontend.onrender.com",
+  "https://student-accommodation-backend.onrender.com" // optional
 ];
 
 const corsOptions = {
@@ -133,7 +140,7 @@ const corsOptions = {
     console.log('💡 Allowed: localhost, CLIENT_URL, *.vercel.app' + (isDevelopment ? ', dev tunnels' : ''));
     return callback(new Error('Not allowed by CORS'));
   },
-  credentials: true,
+  credentials: false,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 };
@@ -150,17 +157,34 @@ console.log('  - Allowed: localhost, CLIENT_URL, *.vercel.app' + (isDevelopment 
 
 // Middleware
 app.use(helmet());
-app.use(cors(corsOptions));
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // server-to-server
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    console.log("Blocked CORS origin:", origin);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
+app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
+app.get('/api/saved', userRoutes);        // redirect to /users/saved-listings
+app.get('/api/stayed', userRoutes);       // redirect to /users/stayed-listings
 
+// PROXY FIX
 // Rate limiting
+app.set('trust proxy', 1);
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100 // limit each IP to 100 requests per windowMs
 });
 app.use('/api/', limiter);
+
+
+//PROXY FIX
+app.use(express.json());
 
 // Socket.io for real-time notifications
 io.on('connection', (socket) => {
@@ -193,7 +217,12 @@ app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' });
+  try {
+    res.json({ status: 'OK', message: 'Server is running' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Error handling middleware

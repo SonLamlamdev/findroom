@@ -1,8 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const Listing = require('../models/Listing');
 const { auth, isLandlord } = require('../middleware/auth');
-const upload = require('../middleware/upload');
+//const upload = require('../middleware/upload');
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 // Get all listings with filters
 router.get('/', async (req, res) => {
@@ -82,8 +86,17 @@ router.get('/', async (req, res) => {
 
     const total = await Listing.countDocuments(query);
 
+    const listingsWithImages = listings.map(l => {
+      const obj = l.toObject();
+      return {
+        ...obj,
+        images: Array.isArray(obj.images) ? obj.images : [],
+      };
+    });
+      
+
     res.json({
-      listings,
+      listings: listingsWithImages,
       pagination: {
         page: Number(page),
         limit: Number(limit),
@@ -349,6 +362,7 @@ router.patch('/:id/status', auth, isLandlord, async (req, res) => {
 });
 
 // Track search keyword
+/*
 router.post('/:id/track-keyword', async (req, res) => {
   try {
     const { keyword } = req.body;
@@ -370,17 +384,33 @@ router.post('/:id/track-keyword', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
-});
-
-// Get landlord's listings
-router.get('/landlord/:landlordId', async (req, res) => {
+});*/
+router.post('/create', upload.single('image'), async (req, res) => {
   try {
-    const listings = await Listing.find({ 
-      landlord: req.params.landlordId 
-    }).sort('-createdAt');
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-    res.json({ listings });
-  } catch (error) {
+    // Upload to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        { folder: 'listings' },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      ).end(req.file.buffer);
+    });
+
+    // Create listing
+    const newListing = new Listing({
+      ...req.body,
+      imageUrl: result.secure_url,
+      imagePublicId: result.public_id
+    });
+
+    await newListing.save();
+    res.json({ message: 'Listing created successfully', listing: newListing });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
