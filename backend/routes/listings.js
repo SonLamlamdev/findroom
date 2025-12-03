@@ -3,7 +3,6 @@ const router = express.Router();
 const Listing = require('../models/Listing');
 const { auth, isLandlord } = require('../middleware/auth');
 const upload = require('../middleware/upload');
-const express = require('express');
 const Listing = require('../models/Listing');
 const upload = require('../middleware/upload');
 
