@@ -170,6 +170,8 @@ app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
+app.get('/api/saved', userRoutes);        // redirect to /users/saved-listings
+app.get('/api/stayed', userRoutes);       // redirect to /users/stayed-listings
 
 // PROXY FIX
 // Rate limiting
