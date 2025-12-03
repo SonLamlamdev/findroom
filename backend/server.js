@@ -164,9 +164,10 @@ app.use(cors({
 app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static('uploads', {
-  setHeaders: (res, path, stat) => {
-    res.set('Cross-Origin-Resource-Policy', 'cross-origin'); // allow loading from frontend
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res, path) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin'); // optional if needed
   }
 }));
 app.get('/api/saved', userRoutes);        // redirect to /users/saved-listings

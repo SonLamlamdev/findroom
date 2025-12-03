@@ -291,7 +291,7 @@ const Listings = () => {
               <div className="relative h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
                 {listing.images && listing.images.length > 0 ? (
                   <img
-                    src={`${import.meta.env.VITE_API_URL}${listing.images[0]}`}
+                    src={listing.images[0]}
                     alt={listing.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />
