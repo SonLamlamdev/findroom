@@ -151,7 +151,7 @@ console.log('  - CLIENT_URL:', process.env.CLIENT_URL || 'Not set');
 console.log('  - Allowed: localhost, CLIENT_URL, *.vercel.app' + (isDevelopment ? ', dev tunnels (*.devtunnels.ms, *.ngrok.io, etc.)' : ''));
 
 // Middleware
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
