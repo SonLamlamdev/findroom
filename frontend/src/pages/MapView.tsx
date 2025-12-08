@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../utils/errorHandler';
 import { FiMapPin, FiDollarSign } from 'react-icons/fi';
+import { getImageUrl } from '../utils/imageHelper';
 import 'leaflet/dist/leaflet.css';
 
 // Fix Leaflet default icon issue

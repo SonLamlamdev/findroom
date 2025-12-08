@@ -2,6 +2,7 @@
  * Helper function to get full image URL
  * Converts relative paths like "/uploads/image.jpg" to full URLs
  */
+
 export const getImageUrl = (imagePath: string | undefined | null): string => {
   if (!imagePath) {
     return ''; // Return empty string if no image
