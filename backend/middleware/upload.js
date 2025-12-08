@@ -14,14 +14,61 @@ const storage = multer.diskStorage({
 
 // File filter
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|avi/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
+  // Allowed file extensions
+  const allowedExtensions = /\.(jpeg|jpg|png|gif|webp|bmp|svg|mp4|mov|avi|wmv|flv|webm|mkv|m4v)$/i;
+  
+  // Allowed MIME types
+  const allowedMimeTypes = [
+    // Images
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/bmp',
+    'image/svg+xml',
+    // Videos
+    'video/mp4',
+    'video/quicktime',  // mov
+    'video/x-msvideo', // avi
+    'video/x-ms-wmv',  // wmv
+    'video/x-flv',     // flv
+    'video/webm',      // webm
+    'video/x-matroska', // mkv
+    'video/x-m4v'      // m4v
+  ];
 
-  if (mimetype && extname) {
+  // Get file extension (remove the dot)
+  const fileExtension = path.extname(file.originalname).toLowerCase();
+  const hasValidExtension = allowedExtensions.test(fileExtension);
+  const hasValidMimeType = allowedMimeTypes.includes(file.mimetype);
+
+  // Log for debugging (only in development)
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('📁 File upload check:', {
+      filename: file.originalname,
+      mimetype: file.mimetype,
+      extension: fileExtension,
+      validExtension: hasValidExtension,
+      validMimeType: hasValidMimeType
+    });
+  }
+
+  // Allow if either extension OR mimetype is valid
+  // This is more flexible and handles edge cases
+  if (hasValidExtension || hasValidMimeType) {
     return cb(null, true);
   } else {
-    cb(new Error('Only images and videos are allowed'));
+    const error = new Error(
+      `File type not allowed. Only images (jpg, png, gif, webp, etc.) and videos (mp4, mov, avi, etc.) are allowed. ` +
+      `Received: ${file.mimetype} (${fileExtension})`
+    );
+    console.error('❌ File upload rejected:', {
+      filename: file.originalname,
+      mimetype: file.mimetype,
+      extension: fileExtension
+    });
+    return cb(error);
   }
 };
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from '../config/axios';
-import { FiSend, FiMessageCircle, FiHome } from 'react-icons/fi';
+import { FiSend, FiMessageCircle, FiHome, FiTrash2 } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../utils/errorHandler';
@@ -49,6 +49,10 @@ const Messages = () => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
   useEffect(() => {
     fetchConversations();
@@ -62,6 +66,7 @@ const Messages = () => {
 
   useEffect(() => {
     if (selectedConversation) {
+      setShouldAutoScroll(true); // Reset when conversation changes
       fetchMessages(selectedConversation._id);
       const interval = setInterval(() => {
         fetchMessages(selectedConversation._id);
@@ -70,12 +75,57 @@ const Messages = () => {
     }
   }, [selectedConversation]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // Check if user is near bottom of messages
+  const isNearBottom = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return true;
+    
+    const threshold = 100; // pixels from bottom
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    return scrollHeight - scrollTop - clientHeight < threshold;
+  };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  useEffect(() => {
+    // Only auto-scroll if user is near bottom or it's a new message from current user
+    if (shouldAutoScroll && isNearBottom() && !isUserScrolling) {
+      // Use setTimeout to ensure DOM is updated
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    }
+  }, [messages, shouldAutoScroll, isUserScrolling]);
+
+  const scrollToBottom = (force = false) => {
+    if (force || isNearBottom()) {
+      messagesEndRef.current?.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'nearest'
+      });
+    }
+  };
+
+  // Handle scroll events
+  const handleScroll = () => {
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+      
+      setIsUserScrolling(!isAtBottom);
+      setShouldAutoScroll(isAtBottom);
+    }
+  };
+
+  // Prevent auto-scroll when input is focused
+  const handleInputFocus = () => {
+    setShouldAutoScroll(false);
+  };
+
+  const handleInputBlur = () => {
+    // Re-enable auto-scroll if near bottom
+    if (isNearBottom()) {
+      setShouldAutoScroll(true);
+    }
   };
 
   const fetchConversations = async () => {
@@ -83,41 +133,10 @@ const Messages = () => {
       const response = await axios.get('/api/messages/conversations');
       let conversations = response.data.conversations;
       
-      // Additional deduplication on frontend (in case backend missed any)
-      // Group conversations by participants and listing
-      const conversationMap = new Map<string, Conversation>();
-      
-      conversations.forEach((conv: Conversation) => {
-        if (!user) return;
-        
-        const otherParticipant = conv.participants.find(p => p._id !== user._id);
-        if (!otherParticipant) return;
-        
-        let key: string;
-        if (conv.listing) {
-          // Conversation with listing
-          key = `listing_${conv.listing._id}_${otherParticipant._id}`;
-        } else {
-          // Direct message without listing
-          key = `direct_${otherParticipant._id}`;
-        }
-        
-        // Keep the most recent conversation
-        const existing = conversationMap.get(key);
-        if (!existing) {
-          conversationMap.set(key, conv);
-        } else {
-          // Compare by lastMessageAt or createdAt
-          const existingTime = new Date(existing.lastMessageAt || existing.createdAt || 0).getTime();
-          const currentTime = new Date(conv.lastMessageAt || conv.createdAt || 0).getTime();
-          if (currentTime > existingTime) {
-            conversationMap.set(key, conv);
-          }
-        }
-      });
-      
-      // Convert back to array and sort
-      conversations = Array.from(conversationMap.values()).sort((a, b) => {
+      // Backend now groups conversations by user (landlord/tenant) instead of by listing
+      // So all conversations with the same landlord are merged into one
+      // Just sort by last message time
+      conversations = conversations.sort((a: Conversation, b: Conversation) => {
         const aTime = new Date(a.lastMessageAt || a.createdAt || 0).getTime();
         const bTime = new Date(b.lastMessageAt || b.createdAt || 0).getTime();
         return bTime - aTime;
@@ -185,17 +204,55 @@ const Messages = () => {
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return;
 
+    const messageContent = newMessage.trim();
+    setNewMessage(''); // Clear input immediately for better UX
+    
+    // Optimistically add message to UI
+    const tempMessage: Message = {
+      _id: `temp-${Date.now()}`,
+      sender: {
+        _id: user!._id,
+        name: user!.name,
+        avatar: user!.avatar || ''
+      },
+      content: messageContent,
+      createdAt: new Date().toISOString(),
+      read: false
+    };
+    setMessages(prev => [...prev, tempMessage]);
+    setShouldAutoScroll(true); // Force scroll to bottom for own messages
+
     try {
       const response = await axios.post(
         `/api/messages/conversations/${selectedConversation._id}/messages`,
-        { content: newMessage }
+        { content: messageContent }
       );
-      setMessages([...messages, response.data.message]);
-      setNewMessage('');
+      // Replace temp message with real one
+      setMessages(prev => 
+        prev.map(msg => msg._id === tempMessage._id ? response.data.message : msg)
+      );
       fetchConversations(); // Update last message
+      // Scroll to bottom after message is sent
+      setTimeout(() => scrollToBottom(true), 100);
     } catch (error) {
       console.error('Failed to send message:', error);
       toast.error('Không thể gửi tin nhắn');
+      // Remove temp message on error
+      setMessages(prev => prev.filter(msg => msg._id !== tempMessage._id));
+    }
+  };
+
+  const deleteMessage = async (messageId: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa tin nhắn này?')) return;
+
+    try {
+      await axios.delete(`/api/messages/messages/${messageId}`);
+      // Remove message from UI immediately
+      setMessages(prev => prev.filter(msg => msg._id !== messageId));
+      toast.success('Đã xóa tin nhắn');
+    } catch (error) {
+      console.error('Failed to delete message:', error);
+      toast.error('Không thể xóa tin nhắn');
     }
   };
 
@@ -262,6 +319,11 @@ const Messages = () => {
                             {conversation.listing.title}
                           </p>
                         )}
+                        {conversation.allListings && conversation.allListings.length > 1 && (
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                            {conversation.allListings.length} phòng trọ
+                          </p>
+                        )}
                         {conversation.lastMessage && (
                           <p className="text-sm text-gray-600 dark:text-gray-400 truncate mt-1">
                             {conversation.lastMessage.content}
@@ -313,7 +375,12 @@ const Messages = () => {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div 
+                ref={messagesContainerRef}
+                className="flex-1 overflow-y-auto p-4 space-y-4"
+                onScroll={handleScroll}
+                style={{ scrollBehavior: 'smooth' }}
+              >
                 {messages.length === 0 ? (
                   <div className="text-center text-gray-500 py-8">
                     <p>Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!</p>
@@ -324,27 +391,75 @@ const Messages = () => {
                     return (
                       <div
                         key={message._id}
-                        className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                        className={`flex items-start gap-2 ${isOwn ? 'justify-end' : 'justify-start'} group`}
                       >
-                        <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                            isOwn
-                              ? 'bg-primary-600 text-white'
-                              : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
-                          }`}
-                        >
-                          <p className="text-sm">{message.content}</p>
-                          <p
-                            className={`text-xs mt-1 ${
-                              isOwn ? 'text-primary-100' : 'text-gray-500 dark:text-gray-400'
+                        {!isOwn && (
+                          <div className="w-8 h-8 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center flex-shrink-0">
+                            {message.sender.avatar ? (
+                              <img
+                                src={message.sender.avatar}
+                                alt={message.sender.name}
+                                className="w-full h-full rounded-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-primary-600 dark:text-primary-400 text-xs font-semibold">
+                                {message.sender.name?.charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        <div className="flex flex-col gap-1 max-w-xs lg:max-w-md">
+                          {!isOwn && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 px-1">
+                              {message.sender.name}
+                            </p>
+                          )}
+                          <div
+                            className={`relative px-4 py-2 rounded-lg ${
+                              isOwn
+                                ? 'bg-primary-600 text-white'
+                                : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
                             }`}
                           >
-                            {new Date(message.createdAt).toLocaleTimeString('vi-VN', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
+                            <p className="text-sm">{message.content}</p>
+                            <div className="flex items-center justify-between mt-1">
+                              <p
+                                className={`text-xs ${
+                                  isOwn ? 'text-primary-100' : 'text-gray-500 dark:text-gray-400'
+                                }`}
+                              >
+                                {new Date(message.createdAt).toLocaleTimeString('vi-VN', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                              {isOwn && (
+                                <button
+                                  onClick={() => deleteMessage(message._id)}
+                                  className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-primary-700 rounded"
+                                  title="Xóa tin nhắn"
+                                >
+                                  <FiTrash2 size={14} className="text-primary-100 hover:text-white" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
+                        {isOwn && (
+                          <div className="w-8 h-8 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center flex-shrink-0">
+                            {user?.avatar ? (
+                              <img
+                                src={user.avatar}
+                                alt={user.name}
+                                className="w-full h-full rounded-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-primary-600 dark:text-primary-400 text-xs font-semibold">
+                                {user?.name?.charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })
@@ -353,20 +468,29 @@ const Messages = () => {
               </div>
 
               {/* Message Input */}
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
                 <div className="flex gap-2">
                   <input
+                    ref={inputRef}
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                      }
+                    }}
+                    onFocus={handleInputFocus}
+                    onBlur={handleInputBlur}
                     placeholder="Nhập tin nhắn..."
-                    className="input flex-1"
+                    className="input flex-1 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    autoComplete="off"
                   />
                   <button
                     onClick={sendMessage}
                     disabled={!newMessage.trim()}
-                    className="btn-primary"
+                    className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                   >
                     <FiSend size={20} />
                   </button>

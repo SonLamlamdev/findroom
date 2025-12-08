@@ -8,9 +8,40 @@ export const getErrorMessage = (error: any, defaultMessage: string = 'Có lỗi 
     return error;
   }
 
+  // Handle network errors (no response from server)
+  if (error?.code === 'ECONNREFUSED' || error?.code === 'ERR_NETWORK' || !error?.response) {
+    const isDevelopment = import.meta.env.DEV;
+    if (error?.userMessage) {
+      return error.userMessage;
+    }
+    if (error?.message?.includes('Network Error') || error?.message?.includes('ECONNREFUSED')) {
+      return isDevelopment
+        ? 'Không thể kết nối đến server. Vui lòng kiểm tra backend có đang chạy trên http://localhost:5000 không?'
+        : 'Không thể kết nối đến server. Vui lòng thử lại sau.';
+    }
+    if (error?.message?.includes('CORS')) {
+      return 'Lỗi CORS. Vui lòng kiểm tra cấu hình backend.';
+    }
+    return isDevelopment
+      ? 'Lỗi kết nối mạng. Kiểm tra backend server có đang chạy không?'
+      : 'Lỗi kết nối mạng. Vui lòng thử lại sau.';
+  }
+
   // If it's an Error object, get the message
   if (error instanceof Error) {
     return error.message || defaultMessage;
+  }
+
+  // Handle 429 Too Many Requests
+  if (error?.response?.status === 429) {
+    if (error?.userMessage) {
+      return error.userMessage;
+    }
+    const retryAfter = error?.response?.headers?.['retry-after'] || error?.response?.headers?.['x-ratelimit-reset'];
+    if (retryAfter) {
+      return `Quá nhiều yêu cầu. Vui lòng thử lại sau ${retryAfter} giây.`;
+    }
+    return 'Quá nhiều yêu cầu. Vui lòng đợi một chút rồi thử lại.';
   }
 
   // Handle axios error response

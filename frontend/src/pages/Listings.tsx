@@ -5,6 +5,7 @@ import { FiHeart, FiMapPin, FiHome } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import DistrictAutocomplete from '../components/DistrictAutocomplete';
+import { getImageUrl } from '../utils/imageHelper';
 
 interface Listing {
   _id: string;
@@ -291,7 +292,7 @@ const Listings = () => {
               <div className="relative h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
                 {listing.images[0] ? (
                   <img
-                    src={listing.images[0]}
+                    src={getImageUrl(listing.images[0])}
                     alt={listing.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />

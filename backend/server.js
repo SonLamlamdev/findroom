@@ -7,6 +7,9 @@ const http = require('http');
 const socketIo = require('socket.io');
 require('dotenv').config();
 
+// Check environment
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 // Check for required environment variables
 if (!process.env.JWT_SECRET) {
   console.warn('⚠️  JWT_SECRET not found in .env file. Using default (NOT SECURE FOR PRODUCTION)');
@@ -47,7 +50,6 @@ const socketIoOptions = {
       }
       
       // Allow dev tunnels in development mode
-      const isDevelopment = process.env.NODE_ENV !== 'production';
       if (isDevelopment) {
         if (
           origin.includes('.devtunnels.ms') ||
@@ -108,7 +110,6 @@ const corsOptions = {
     
     // 4. Kiểm tra Dev Tunnels (chỉ cho phép khi chạy local/development)
     // Cho phép VS Code Dev Tunnels, ngrok, và các dev tunnel services khác
-    const isDevelopment = process.env.NODE_ENV !== 'production';
     if (isDevelopment) {
       // Cho phép các dev tunnel services phổ biến
       if (
@@ -141,7 +142,6 @@ const corsOptions = {
 // --- KẾT THÚC ĐOẠN CODE THAY THẾ ---
 
 // Log CORS configuration on startup
-const isDevelopment = process.env.NODE_ENV !== 'production';
 console.log('🌐 CORS Configuration:');
 console.log('  - Environment:', isDevelopment ? 'DEVELOPMENT' : 'PRODUCTION');
 console.log('  - Backend URL: https://findroom-qd83.onrender.com');
@@ -155,12 +155,40 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
 
-// Rate limiting
-const limiter = rateLimit({
+// Rate limiting configuration
+// More lenient in development, stricter in production
+// General API rate limiter
+const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: isDevelopment ? 1000 : 100, // More lenient in development
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path === '/api/health';
+  }
 });
-app.use('/api/', limiter);
+
+// Auth routes rate limiter (more lenient for login/register)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: isDevelopment ? 50 : 10, // Allow more attempts in development
+  message: {
+    error: 'Too many authentication attempts, please try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true // Don't count successful requests
+});
+
+// Apply rate limiting
+app.use('/api/auth', authLimiter); // Stricter for auth routes
+app.use('/api/', generalLimiter); // General rate limiting for all other routes
 
 // Socket.io for real-time notifications
 io.on('connection', (socket) => {

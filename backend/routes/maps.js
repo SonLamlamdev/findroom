@@ -290,6 +290,7 @@ router.post('/annotations/:id/report', auth, async (req, res) => {
 router.get('/flood-reports', async (req, res) => {
   try {
     const { lat, lng, radius = 1000 } = req.query; // radius in meters
+    const now = new Date();
     
     if (!lat || !lng) {
       return res.status(400).json({ error: 'Latitude and longitude required' });
@@ -297,6 +298,7 @@ router.get('/flood-reports', async (req, res) => {
     
     const reports = await FloodReport.find({
       status: 'active',
+      expiresAt: { $gt: now }, // Chỉ lấy reports chưa hết hạn
       'location.coordinates': {
         $near: {
           $geometry: {
@@ -472,13 +474,11 @@ router.get('/flood-zones', async (req, res) => {
   try {
     const { bounds } = req.query;
     const now = new Date();
-    const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
     
-    // Lấy tất cả reports active trong 30 phút qua
+    // Lấy tất cả reports active chưa hết hạn (30 phút)
     const query = {
       status: 'active',
-      expiresAt: { $gt: now },
-      createdAt: { $gte: thirtyMinutesAgo }
+      expiresAt: { $gt: now }
     };
     
     if (bounds) {
@@ -558,6 +558,25 @@ router.get('/flood-zones', async (req, res) => {
   }
 });
 
+// Helper function: Tính khoảng cách giữa 2 điểm (Haversine formula) - trả về mét
+function calculateDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000; // Bán kính Trái Đất tính bằng mét
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// Helper function: Kiểm tra 2 circle có giao nhau không
+function circlesIntersect(lat1, lng1, radius1, lat2, lng2, radius2) {
+  const distance = calculateDistance(lat1, lng1, lat2, lng2);
+  return distance < (radius1 + radius2); // Giao nhau nếu khoảng cách < tổng 2 radius
+}
+
 // Get flood reports with radius clustering
 router.get('/flood-reports-clustered', async (req, res) => {
   try {
@@ -583,7 +602,88 @@ router.get('/flood-reports-clustered', async (req, res) => {
       .sort('-createdAt')
       .limit(200);
     
-    res.json({ reports });
+    // Convert reports to plain objects và extract coordinates
+    const reportsData = reports.map(report => {
+      const coords = report.location.coordinates.coordinates; // GeoJSON format: [lng, lat]
+      return {
+        ...report.toObject(),
+        _lat: coords[1], // latitude
+        _lng: coords[0], // longitude
+        _originalRadius: report.radius || 100
+      };
+    });
+    
+    // Nhóm các reports giao nhau lại với nhau
+    const groups = [];
+    const processed = new Set();
+    
+    reportsData.forEach(report => {
+      if (processed.has(report._id.toString())) return;
+      
+      const group = [report];
+      processed.add(report._id.toString());
+      
+      // Tìm tất cả reports giao nhau với report này
+      let foundNew = true;
+      while (foundNew) {
+        foundNew = false;
+        reportsData.forEach(otherReport => {
+          if (processed.has(otherReport._id.toString())) return;
+          
+          // Kiểm tra xem otherReport có giao nhau với bất kỳ report nào trong group không
+          const intersectsWithGroup = group.some(groupReport => {
+            return circlesIntersect(
+              groupReport._lat, groupReport._lng, groupReport._originalRadius,
+              otherReport._lat, otherReport._lng, otherReport._originalRadius
+            );
+          });
+          
+          if (intersectsWithGroup) {
+            group.push(otherReport);
+            processed.add(otherReport._id.toString());
+            foundNew = true;
+          }
+        });
+      }
+      
+      groups.push(group);
+    });
+    
+    // Mở rộng radius cho các reports trong nhóm có >= 2 reports
+    const expandedReports = reportsData.map(report => {
+      // Tìm nhóm chứa report này
+      const group = groups.find(g => g.some(r => r._id.toString() === report._id.toString()));
+      
+      let expandedRadius = report._originalRadius;
+      
+      // Nếu nhóm có >= 2 reports, mở rộng radius
+      if (group && group.length >= 2) {
+        // Tính expansion factor dựa trên số lượng reports trong nhóm
+        // 2 reports: 1.5x, 3-4 reports: 2x, >=5 reports: 2.5x
+        let expansionFactor = 1.5;
+        if (group.length >= 5) {
+          expansionFactor = 2.5;
+        } else if (group.length >= 3) {
+          expansionFactor = 2.0;
+        }
+        
+        expandedRadius = Math.round(report._originalRadius * expansionFactor);
+      }
+      
+      // Trả về report với radius đã được mở rộng
+      return {
+        ...report,
+        radius: expandedRadius
+      };
+    });
+    
+    // Loại bỏ các trường tạm thời
+    const finalReports = expandedReports.map(report => {
+      const { _lat, _lng, _originalRadius, ...cleanReport } = report;
+      return cleanReport;
+    });
+    
+    res.json({ reports: finalReports });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error' });

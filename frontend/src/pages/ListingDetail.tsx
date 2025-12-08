@@ -215,7 +215,7 @@ const ListingDetail = () => {
         <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden">
           {listing.images[selectedImage] ? (
             <img
-              src={listing.images[selectedImage]}
+              src={getImageUrl(listing.images[selectedImage])}
               alt={listing.title}
               className="w-full h-full object-cover"
             />
@@ -235,7 +235,7 @@ const ListingDetail = () => {
               }`}
               onClick={() => setSelectedImage(index)}
             >
-              <img src={image} alt="" className="w-full h-full object-cover" />
+              <img src={getImageUrl(image)} alt="" className="w-full h-full object-cover" />
             </div>
           ))}
         </div>

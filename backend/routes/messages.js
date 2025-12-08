@@ -17,33 +17,37 @@ router.get('/conversations', auth, async (req, res) => {
       .sort('-lastMessageAt')
       .limit(50);
 
-    // Deduplicate conversations: for conversations without listing between same two users,
-    // keep only the most recent one
+    // Group conversations by landlord (other participant) instead of by listing
+    // This means if a landlord has multiple listings, all conversations with that landlord
+    // will be merged into one conversation
     const conversationMap = new Map();
     
     allConversations.forEach(conv => {
-      if (!conv.listing) {
-        // Direct message - find the other participant
-        const otherParticipant = conv.participants.find(p => p._id.toString() !== req.userId.toString());
-        if (otherParticipant) {
-          const key = `direct_${otherParticipant._id}`;
-          const existing = conversationMap.get(key);
-          
-          // Keep the one with most recent message or creation date
-          if (!existing || 
-              (conv.lastMessageAt && (!existing.lastMessageAt || conv.lastMessageAt > existing.lastMessageAt)) ||
-              (!conv.lastMessageAt && !existing.lastMessageAt && conv.createdAt > existing.createdAt)) {
-            conversationMap.set(key, conv);
-          }
-        } else {
-          // Fallback: use conversation ID as key
-          conversationMap.set(conv._id.toString(), conv);
-        }
-      } else {
-        // Conversation with listing - use listing + participants as key
-        const otherParticipant = conv.participants.find(p => p._id.toString() !== req.userId.toString());
-        const key = `listing_${conv.listing._id}_${otherParticipant?._id || ''}`;
+      const otherParticipant = conv.participants.find(p => p._id.toString() !== req.userId.toString());
+      
+      if (!otherParticipant) {
+        // Fallback: use conversation ID as key
+        conversationMap.set(conv._id.toString(), conv);
+        return;
+      }
+      
+      // Group by other participant (landlord or tenant) - regardless of listing
+      const key = `user_${otherParticipant._id}`;
+      const existing = conversationMap.get(key);
+      
+      // Keep the conversation with the most recent message
+      if (!existing) {
         conversationMap.set(key, conv);
+      } else {
+        // Compare by lastMessageAt or createdAt
+        const existingTime = existing.lastMessageAt || existing.createdAt;
+        const currentTime = conv.lastMessageAt || conv.createdAt;
+        
+        // Always keep the conversation with the most recent message
+        if (currentTime && (!existingTime || new Date(currentTime) > new Date(existingTime))) {
+          conversationMap.set(key, conv);
+        }
+        // If existing is more recent, keep it (don't replace)
       }
     });
 
@@ -76,50 +80,24 @@ router.post('/conversations', auth, async (req, res) => {
       return res.status(400).json({ error: 'Cannot create conversation with yourself' });
     }
 
-    // Check if conversation already exists
-    let conversation;
-    
-    if (listingId) {
-      // Conversation with listing
-      conversation = await Conversation.findOne({
-        participants: { $all: [req.userId, recipientId] },
-        listing: listingId
-      })
-        .populate('participants', 'name email avatar role')
-        .populate('listing', 'title images price location');
-    } else {
-      // Conversation without listing (direct message between users)
-      // Find ANY conversation between these two users without listing
-      // First try with $exists: false
-      conversation = await Conversation.findOne({
-        $and: [
-          { participants: { $all: [req.userId, recipientId] } },
-          { participants: { $size: 2 } },
-          { $or: [
-            { listing: { $exists: false } },
-            { listing: null }
-          ]}
-        ]
-      })
-        .populate('participants', 'name email avatar role')
-        .sort('-createdAt'); // Get the most recent one if multiple exist
-    }
+    // Find ANY conversation between these two users (regardless of listing)
+    // This groups all conversations with the same landlord/tenant into one
+    let conversation = await Conversation.findOne({
+      participants: { $all: [req.userId, recipientId] },
+      participants: { $size: 2 }
+    })
+      .populate('participants', 'name email avatar role')
+      .populate('listing', 'title images price location')
+      .sort('-lastMessageAt -createdAt'); // Get the most recent one
 
     if (!conversation) {
       try {
         // Create new conversation
-        // Only include listing field if listingId is provided
-        if (listingId) {
-          conversation = new Conversation({
-            participants: [req.userId, recipientId],
-            listing: listingId
-          });
-        } else {
-          // Don't set listing field at all for direct messages
-          conversation = new Conversation({
-            participants: [req.userId, recipientId]
-          });
-        }
+        // Include listing if provided, but it's optional since we group by user
+        conversation = new Conversation({
+          participants: [req.userId, recipientId],
+          listing: listingId || undefined
+        });
         
         await conversation.save();
         await conversation.populate('participants', 'name email avatar role');
@@ -132,44 +110,18 @@ router.post('/conversations', auth, async (req, res) => {
         if (saveError.code === 11000 || saveError.name === 'MongoServerError') {
           console.log('Duplicate key error, trying to find existing conversation...');
           
-          if (listingId) {
-            conversation = await Conversation.findOne({
-              participants: { $all: [req.userId, recipientId] },
-              listing: listingId
-            })
-              .populate('participants', 'name email avatar role')
-              .populate('listing', 'title images price location');
-          } else {
-            // Try to find existing conversation again - prioritize $exists: false
-            conversation = await Conversation.findOne({
-              $and: [
-                { participants: { $all: [req.userId, recipientId] } },
-                { participants: { $size: 2 } },
-                { listing: { $exists: false } }
-              ]
-            })
-              .populate('participants', 'name email avatar role')
-              .sort('-createdAt');
-            
-            // If not found, try with null
-            if (!conversation) {
-              conversation = await Conversation.findOne({
-                $and: [
-                  { participants: { $all: [req.userId, recipientId] } },
-                  { participants: { $size: 2 } },
-                  { listing: null }
-                ]
-              })
-                .populate('participants', 'name email avatar role')
-                .sort('-createdAt');
-            }
-          }
+          conversation = await Conversation.findOne({
+            participants: { $all: [req.userId, recipientId] },
+            participants: { $size: 2 }
+          })
+            .populate('participants', 'name email avatar role')
+            .populate('listing', 'title images price location')
+            .sort('-lastMessageAt -createdAt');
           
           if (conversation) {
             console.log('Found existing conversation, returning it');
           } else {
             console.error('Duplicate key error but conversation not found:', saveError);
-            // Return a more user-friendly error
             return res.status(409).json({ 
               error: 'Conversation already exists',
               message: 'A conversation with this user already exists. Please refresh the page.'
@@ -268,6 +220,41 @@ router.post('/conversations/:conversationId/messages', auth, async (req, res) =>
     await conversation.save();
 
     res.json({ message });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Delete a message (soft delete - only for the user who deletes it)
+router.delete('/messages/:messageId', auth, async (req, res) => {
+  try {
+    const { messageId } = req.params;
+
+    const message = await Message.findById(messageId)
+      .populate('conversation', 'participants');
+
+    if (!message) {
+      return res.status(404).json({ error: 'Message not found' });
+    }
+
+    // Verify user is participant in the conversation
+    const conversation = message.conversation;
+    if (!conversation.participants.includes(req.userId)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Only allow user to delete their own messages
+    if (message.sender.toString() !== req.userId.toString()) {
+      return res.status(403).json({ error: 'You can only delete your own messages' });
+    }
+
+    // Soft delete: add to deletedBy array or mark as deleted
+    // For now, we'll actually delete it since there's no deletedBy field
+    // In production, you might want to add a deletedBy field for soft delete
+    await Message.findByIdAndDelete(messageId);
+
+    res.json({ message: 'Message deleted successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error' });

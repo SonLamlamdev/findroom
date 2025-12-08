@@ -87,11 +87,11 @@ const floodReportSchema = new mongoose.Schema({
     default: 'active'
   },
   resolvedAt: Date,
-  // TTL - thời gian hết hạn (mặc định 2 giờ)
+  // TTL - thời gian hết hạn (mặc định 30 phút)
   expiresAt: {
     type: Date,
     default: function() {
-      return new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 giờ
+      return new Date(Date.now() + 30 * 60 * 1000); // 30 phút
     }
   }
 }, {

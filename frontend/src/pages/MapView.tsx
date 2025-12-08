@@ -98,6 +98,7 @@ interface FloodReport {
   radius: number;
   description: string;
   images?: string[];
+  status?: 'active' | 'resolved';
   user?: {
     name: string;
     avatar?: string;
@@ -199,28 +200,42 @@ const MapView = () => {
   const fetchFloodReports = async () => {
     try {
       const response = await axios.get('/api/maps/flood-reports-clustered');
-      // Convert coordinates
-      const formattedReports = response.data.reports.map((report: any) => {
-        const coords = report.location?.coordinates;
-        let lat, lng;
-        
-        if (coords?.coordinates && Array.isArray(coords.coordinates)) {
-          [lng, lat] = coords.coordinates;
-        } else if (coords?.lat && coords?.lng) {
-          lat = coords.lat;
-          lng = coords.lng;
-        } else {
-          return null;
-        }
-        
-        return {
-          ...report,
-          location: {
-            ...report.location,
-            coordinates: { lat, lng }
+      const now = new Date();
+      
+      // Convert coordinates và filter reports đã hết hạn
+      const formattedReports = response.data.reports
+        .filter((report: any) => {
+          // Filter reports đã hết hạn (30 phút)
+          if (report.expiresAt) {
+            const expiresAt = new Date(report.expiresAt);
+            if (expiresAt <= now) {
+              return false; // Bỏ qua reports đã hết hạn
+            }
           }
-        };
-      }).filter(Boolean);
+          return true;
+        })
+        .map((report: any) => {
+          const coords = report.location?.coordinates;
+          let lat, lng;
+          
+          if (coords?.coordinates && Array.isArray(coords.coordinates)) {
+            [lng, lat] = coords.coordinates;
+          } else if (coords?.lat && coords?.lng) {
+            lat = coords.lat;
+            lng = coords.lng;
+          } else {
+            return null;
+          }
+          
+          return {
+            ...report,
+            location: {
+              ...report.location,
+              coordinates: { lat, lng }
+            }
+          };
+        })
+        .filter(Boolean);
       
       setFloodReports(formattedReports);
     } catch (error) {
@@ -245,8 +260,59 @@ const MapView = () => {
 
   const handleResolveFlood = async (reportId: string) => {
     try {
-      await axios.post(`/api/maps/flood-reports/${reportId}/resolve`);
-      toast.success('Đã xác nhận nước đã rút');
+      const response = await axios.post(`/api/maps/flood-reports/${reportId}/resolve`);
+      const updatedReport = response.data.report;
+      
+      // Convert coordinates from GeoJSON format to {lat, lng} format
+      const coords = updatedReport.location?.coordinates;
+      let lat, lng;
+      
+      if (coords?.coordinates && Array.isArray(coords.coordinates)) {
+        // GeoJSON format: { type: 'Point', coordinates: [lng, lat] }
+        [lng, lat] = coords.coordinates;
+      } else if (coords?.lat && coords?.lng) {
+        // Already in {lat, lng} format
+        lat = coords.lat;
+        lng = coords.lng;
+      } else {
+        // If coordinates are missing, try to get from existing report in state
+        const existingReport = floodReports.find(r => r._id === reportId);
+        if (existingReport?.location?.coordinates) {
+          lat = existingReport.location.coordinates.lat;
+          lng = existingReport.location.coordinates.lng;
+        } else {
+          console.error('Missing coordinates in updated report');
+          toast.error('Lỗi: Không tìm thấy tọa độ');
+          return;
+        }
+      }
+      
+      // Format updated report with converted coordinates
+      const formattedReport = {
+        ...updatedReport,
+        location: {
+          ...updatedReport.location,
+          coordinates: { lat, lng }
+        }
+      };
+      
+      // Nếu report đã được resolve (status = 'resolved'), xóa khỏi state ngay lập tức
+      if (formattedReport.status === 'resolved') {
+        setFloodReports(prevReports => 
+          prevReports.filter(report => report._id !== reportId)
+        );
+        toast.success('Đã xác nhận nước đã rút. Báo cáo đã được ẩn khỏi bản đồ.');
+      } else {
+        // Nếu chưa đủ 3 người xác nhận, chỉ update report trong state
+        setFloodReports(prevReports =>
+          prevReports.map(report =>
+            report._id === reportId ? formattedReport : report
+          )
+        );
+        toast.success(`Đã xác nhận nước đã rút (${formattedReport.resolvedVotes?.length || 0}/3 người xác nhận)`);
+      }
+      
+      // Refresh flood zones và reports để sync với server
       fetchFloodZones();
       fetchFloodReports();
     } catch (error) {
@@ -495,8 +561,17 @@ const MapView = () => {
         })}
         
         {/* Hiển thị flood reports - Radius Clustering */}
-        {dataLayer === 'flood' && floodReports.map((report) => {
-          if (!report.location.coordinates) return null;
+        {dataLayer === 'flood' && floodReports
+          .filter(report => report.status !== 'resolved') // Chỉ hiển thị reports chưa được resolve
+          .map((report) => {
+          // Validate coordinates exist and are valid
+          if (!report.location?.coordinates) return null;
+          const lat = report.location.coordinates.lat;
+          const lng = report.location.coordinates.lng;
+          if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) {
+            console.warn('Invalid coordinates for report:', report._id, report.location.coordinates);
+            return null;
+          }
           
           const color = getFloodColor(report.level, report.floodDepth);
           const opacity = getFloodOpacity(report.level);
@@ -509,7 +584,7 @@ const MapView = () => {
           return (
             <Circle
               key={`report-${report._id}`}
-              center={[report.location.coordinates.lat, report.location.coordinates.lng]}
+              center={[lat, lng]}
               radius={report.radius || 100}
               pathOptions={{
                 fillColor: color,
@@ -524,7 +599,7 @@ const MapView = () => {
                   <h3 className="font-bold text-sm mb-1">🌊 Báo cáo ngập lụt</h3>
                   {report.images && report.images[0] && (
                     <img
-                      src={report.images[0]}
+                      src={getImageUrl(report.images[0])}
                       alt="Flood report"
                       className="w-full h-32 object-cover rounded mb-2"
                     />
@@ -583,7 +658,7 @@ const MapView = () => {
                 <div className="w-64">
                   {listing.images[0] && (
                     <img
-                      src={listing.images[0]}
+                      src={getImageUrl(listing.images[0])}
                       alt={listing.title}
                       className="w-full h-32 object-cover rounded mb-2"
                     />
