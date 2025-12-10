@@ -18,13 +18,25 @@ Lệnh này sẽ cài đặt dependencies cho:
 Tạo file `.env` trong thư mục `backend/` với nội dung:
 
 ```env
-MONGODB_URI=mongodb://localhost:27017/student-accommodation
+MONGODB_URI=mongodb+srv://xuanlam2021qng_db_user:gy8OtbbXFraTDSXn@cluster0.uotweon.mongodb.net/student-accommodation?appName=Cluster0
 JWT_SECRET=your_super_secret_key_change_this_in_production_12345
-PORT=5000
+PORT=5001
 NODE_ENV=development
 UPLOAD_PATH=./uploads
 MAX_FILE_SIZE=10485760
 CLIENT_URL=http://localhost:5173
+```
+
+Tạo file `.env` trong thư mục `frontend/` với nội dung:
+
+```env
+VITE_API_URL=http://localhost:5001
+```
+
+Sửa file `vite.config.ts` trong thư mục `frontend/`, chỉnh tất cả 
+
+```vite.config.ts
+`http://localhost:5000` -> `http://localhost:5001`
 ```
 
 **Cách tạo file trên Windows CMD:**
