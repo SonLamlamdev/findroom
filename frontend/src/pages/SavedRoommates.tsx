@@ -210,11 +210,13 @@ const SavedRoommates = () => {
               <div className="space-y-6">
                 {/* Avatar & Basic Info */}
                 <div className="flex items-center gap-4">
+                  {selectedProfile.avatar ? (
                   <img
                     src={getAvatarUrl(selectedProfile.avatar)}
                     alt={selectedProfile.name}
                     className="w-24 h-24 rounded-full object-cover"
                   />
+                  ) : (
                     <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                       <FiUser size={40} className="text-gray-400" />
                     </div>
