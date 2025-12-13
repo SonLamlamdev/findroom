@@ -104,9 +104,16 @@ router.post('/saved-listings/:listingId', auth, async (req, res) => {
 // Get saved listings
 router.get('/saved-listings', auth, async (req, res) => {
   try {
+    // Validate userId exists
+    if (!req.userId) {
+      console.error('❌ No userId in request for saved-listings');
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     const user = await User.findById(req.userId);
     
     if (!user) {
+      console.error('❌ User not found for saved-listings:', req.userId);
       return res.status(404).json({ error: 'User not found' });
     }
     
