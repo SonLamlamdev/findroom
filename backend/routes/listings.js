@@ -6,6 +6,12 @@ const upload = require('../middleware/upload');
 
 // Get all listings with filters
 router.get('/', async (req, res) => {
+  const timeout = setTimeout(() => {
+    if (!res.headersSent) {
+      res.status(503).json({ error: 'Request timeout' });
+    }
+  }, 1900);
+
   try {
     const {
       search,
@@ -15,16 +21,19 @@ router.get('/', async (req, res) => {
       city,
       district,
       university,
-      amenities, // Comma-separated string
+      amenities,
       status = 'available',
-      sort = '-createdAt', // -createdAt, price, -price, -rating.average, -views
+      sort = '-createdAt',
       page = 1,
       limit = 20
     } = req.query;
 
+    const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 50);
+    const safePage = Math.max(Number(page) || 1, 1);
+    const skip = (safePage - 1) * safeLimit;
+
     const query = { status };
 
-    // Search
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -34,19 +43,16 @@ router.get('/', async (req, res) => {
       ];
     }
 
-    // Price range
     if (minPrice || maxPrice) {
       query.price = {};
       if (minPrice) query.price.$gte = Number(minPrice);
       if (maxPrice) query.price.$lte = Number(maxPrice);
     }
 
-    // Room type
     if (roomType) {
       query['roomDetails.roomType'] = roomType;
     }
 
-    // Location
     if (city) {
       query['location.city'] = { $regex: city, $options: 'i' };
     }
@@ -54,18 +60,15 @@ router.get('/', async (req, res) => {
       query['location.district'] = { $regex: district, $options: 'i' };
     }
 
-    // Amenities filter (array)
     if (amenities) {
       const amenitiesArray = Array.isArray(amenities) ? amenities : amenities.split(',');
       query.amenities = { $all: amenitiesArray };
     }
 
-    // Nearby university
     if (university) {
       query['location.nearbyUniversities.name'] = { $regex: university, $options: 'i' };
     }
 
-    // Sort options
     let sortOption = '-createdAt';
     if (sort === 'price') sortOption = 'price';
     else if (sort === '-price') sortOption = '-price';
@@ -74,26 +77,34 @@ router.get('/', async (req, res) => {
     else if (sort === 'newest') sortOption = '-createdAt';
     else if (sort === 'oldest') sortOption = 'createdAt';
 
-    const listings = await Listing.find(query)
-      .populate('landlord', '_id name avatar verifiedBadge')
-      .sort(sortOption)
-      .limit(Number(limit))
-      .skip((Number(page) - 1) * Number(limit));
+    const [listings, total] = await Promise.all([
+      Listing.find(query)
+        .select('-searchKeywords -viewsHistory')
+        .populate('landlord', '_id name avatar verifiedBadge')
+        .sort(sortOption)
+        .limit(safeLimit)
+        .skip(skip)
+        .lean()
+        .maxTimeMS(1500),
+      Listing.countDocuments(query).maxTimeMS(800)
+    ]);
 
-    const total = await Listing.countDocuments(query);
-
+    clearTimeout(timeout);
     res.json({
       listings,
       pagination: {
-        page: Number(page),
-        limit: Number(limit),
+        page: safePage,
+        limit: safeLimit,
         total,
-        pages: Math.ceil(total / Number(limit))
+        pages: Math.ceil(total / safeLimit)
       }
     });
   } catch (error) {
+    clearTimeout(timeout);
     console.error('❌ Error fetching listings:', error.message);
-    res.status(500).json({ error: 'Server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
