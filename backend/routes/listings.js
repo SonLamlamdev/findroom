@@ -92,7 +92,7 @@ router.get('/', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
+    console.error('❌ Error fetching listings:', error.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -128,7 +128,10 @@ router.get('/:id', async (req, res) => {
 
     res.json({ listing });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in listings route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -198,15 +201,15 @@ router.post('/', auth, isLandlord, upload.array('media', 10), async (req, res) =
   } catch (error) {
     console.error('Error creating listing:', error);
     
-    // Handle validation errors from Mongoose
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({ error: errors.join(', ') });
+    if (!res.headersSent) {
+      if (error.name === 'ValidationError') {
+        const errors = Object.values(error.errors).map(err => err.message);
+        return res.status(400).json({ error: errors.join(', ') });
+      }
+      res.status(500).json({ 
+        error: error.message || 'Lỗi server. Vui lòng thử lại sau.' 
+      });
     }
-
-    res.status(500).json({ 
-      error: error.message || 'Lỗi server. Vui lòng thử lại sau.' 
-    });
   }
 });
 
@@ -271,15 +274,15 @@ router.put('/:id', auth, isLandlord, upload.array('media', 10), async (req, res)
   } catch (error) {
     console.error('Error updating listing:', error);
     
-    // Handle validation errors from Mongoose
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({ error: errors.join(', ') });
+    if (!res.headersSent) {
+      if (error.name === 'ValidationError') {
+        const errors = Object.values(error.errors).map(err => err.message);
+        return res.status(400).json({ error: errors.join(', ') });
+      }
+      res.status(500).json({ 
+        error: error.message || 'Lỗi server. Vui lòng thử lại sau.' 
+      });
     }
-
-    res.status(500).json({ 
-      error: error.message || 'Lỗi server. Vui lòng thử lại sau.' 
-    });
   }
 });
 
@@ -301,7 +304,10 @@ router.delete('/:id', auth, isLandlord, async (req, res) => {
 
     res.json({ message: 'Listing deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in listings route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -324,7 +330,10 @@ router.patch('/:id/status', auth, isLandlord, async (req, res) => {
 
     res.json({ message: 'Listing status updated', listing });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in listings route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -348,7 +357,10 @@ router.post('/:id/track-keyword', async (req, res) => {
 
     res.json({ message: 'Keyword tracked' });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in listings route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -361,7 +373,10 @@ router.get('/landlord/:landlordId', async (req, res) => {
 
     res.json({ listings });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in listings route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 

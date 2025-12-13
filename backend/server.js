@@ -33,38 +33,23 @@ const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
 
-// Socket.io CORS configuration - allow all Vercel preview deployments and dev tunnels
 const socketIoOptions = {
   cors: {
     origin: function (origin, callback) {
-      // Allow requests without origin
       if (!origin) return callback(null, true);
       
-      // Allow localhost
-      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-        return callback(null, true);
-      }
+      const productionFrontend = 'https://student-accommodation-frontend.onrender.com';
+      const allowedOrigins = [productionFrontend];
       
-      // Allow official CLIENT_URL
-      if (origin === process.env.CLIENT_URL) {
-        return callback(null, true);
-      }
-      
-      // Allow dev tunnels in development mode
       if (isDevelopment) {
-        if (
-          origin.includes('.devtunnels.ms') ||
-          origin.includes('.ngrok.io') ||
-          origin.includes('.ngrok-free.app') ||
-          origin.includes('.loca.lt') ||
-          origin.includes('.tunnel.dev')
-        ) {
-          return callback(null, true);
-        }
+        allowedOrigins.push('http://localhost:5173', 'http://localhost:3000');
       }
       
-      // Allow all Vercel preview deployments
-      if (origin.endsWith('.vercel.app')) {
+      if (process.env.CLIENT_URL && !allowedOrigins.includes(process.env.CLIENT_URL)) {
+        allowedOrigins.push(process.env.CLIENT_URL);
+      }
+      
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
       
@@ -77,85 +62,48 @@ const socketIoOptions = {
 
 const io = socketIo(server, socketIoOptions);
 
-// CORS configuration
-// Backend URL: https://findroom-qd83.onrender.com
-// Frontend URL: https://findroom2-sonlamlamdevs-projects.vercel.app
-// This configuration allows:
-// 1. Requests without origin (Postman, Server-to-Server)
-// 2. Localhost (development)
-// 3. Official frontend URL from CLIENT_URL environment variable
-// 4. All Vercel preview deployments (*.vercel.app)
-// --- BẮT ĐẦU ĐOẠN CODE THAY THẾ ---
-
-// Danh sách các domain cụ thể được phép truy cập
-const allowedOrigins = [
-  "http://localhost:5173",             // <--- Đã thêm Vite Localhost vào đây
-  "http://localhost:3000",             // Thêm dự phòng
-  process.env.CLIENT_URL,               // Link chính thức trên Vercel
-  "https://student-accommodation-backend.onrender.com",
-  "https://student-accommodation-frontend.onrender.com"
-];
-
 const corsOptions = {
   origin: function (origin, callback) {
-    // 1. Cho phép request từ Postman hoặc Server-to-Server (không có origin)
     if (!origin) return callback(null, true);
-
-    // 2. Kiểm tra xem origin có nằm trong danh sách cụ thể ở trên không
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      return callback(null, true);
-    }
     
-    // 3. Kiểm tra Localhost (development) - Cho phép mọi port localhost
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      return callback(null, true);
-    }
+    const productionFrontend = 'https://student-accommodation-frontend.onrender.com';
+    const allowedOrigins = [productionFrontend];
     
-    // 4. Kiểm tra Dev Tunnels (chỉ cho phép khi chạy local/development)
-    // Cho phép VS Code Dev Tunnels, ngrok, và các dev tunnel services khác
     if (isDevelopment) {
-      // Cho phép các dev tunnel services phổ biến
-      if (
-        origin.includes('.devtunnels.ms') ||  // VS Code Dev Tunnels
-        origin.includes('.ngrok.io') ||        // ngrok
-        origin.includes('.ngrok-free.app') ||   // ngrok free
-        origin.includes('.loca.lt') ||          // localtunnel
-        origin.includes('.tunnel.dev')          // cloudflare tunnel
-      ) {
-        console.log('✅ Allowed dev tunnel:', origin);
-        return callback(null, true);
-      }
+      allowedOrigins.push(
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:3000'
+      );
     }
     
-    // 5. Kiểm tra các link Preview của Vercel (Quan trọng!)
-    if (origin.endsWith('.vercel.app')) {
+    if (process.env.CLIENT_URL && !allowedOrigins.includes(process.env.CLIENT_URL)) {
+      allowedOrigins.push(process.env.CLIENT_URL);
+    }
+    
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     
-    // Nếu không khớp cái nào thì chặn và Log ra để debug
-    console.log('⚠️  CORS blocked origin:', origin);
-    console.log('💡 Allowed: localhost, CLIENT_URL, *.vercel.app' + (isDevelopment ? ', dev tunnels' : ''));
-    return callback(new Error('Not allowed by CORS'));
+    console.warn('⚠️ CORS blocked origin:', origin);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 };
 
-// --- KẾT THÚC ĐOẠN CODE THAY THẾ ---
-
-// Log CORS configuration on startup
 console.log('🌐 CORS Configuration:');
 console.log('  - Environment:', isDevelopment ? 'DEVELOPMENT' : 'PRODUCTION');
-console.log('  - Backend URL: https://findroom-qd83.onrender.com');
-console.log('  - CLIENT_URL:', process.env.CLIENT_URL || 'Not set');
-console.log('  - Allowed: localhost, CLIENT_URL, *.vercel.app' + (isDevelopment ? ', dev tunnels (*.devtunnels.ms, *.ngrok.io, etc.)' : ''));
+console.log('  - Allowed Origins:', isDevelopment ? 'localhost + https://student-accommodation-frontend.onrender.com' : 'https://student-accommodation-frontend.onrender.com');
+if (process.env.CLIENT_URL) console.log('  - CLIENT_URL:', process.env.CLIENT_URL);
 
-// Middleware
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static('uploads'));
 
 // Rate limiting configuration
@@ -193,23 +141,42 @@ const authLimiter = rateLimit({
 app.use('/api/auth', authLimiter); // Stricter for auth routes
 app.use('/api/', generalLimiter); // General rate limiting for all other routes
 
-// Socket.io for real-time notifications
 io.on('connection', (socket) => {
-  console.log('New client connected');
-  
-  socket.on('join', (userId) => {
-    socket.join(userId);
-  });
+  try {
+    console.log('New client connected');
+    
+    socket.on('join', (userId) => {
+      try {
+        socket.join(userId);
+      } catch (error) {
+        console.error('❌ Socket join error:', error.message);
+      }
+    });
 
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
-  });
+    socket.on('disconnect', () => {
+      console.log('Client disconnected');
+    });
+    
+    socket.on('error', (error) => {
+      console.error('❌ Socket error:', error.message);
+    });
+  } catch (error) {
+    console.error('❌ Socket connection error:', error.message);
+  }
 });
 
 // Make io accessible to routes
 app.set('io', io);
 
-// Routes
+app.use('/api/health', (req, res) => {
+  try {
+    res.json({ status: 'OK', message: 'Server is running' });
+  } catch (error) {
+    console.error('❌ Health check error:', error.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/listings', listingRoutes);
@@ -222,27 +189,37 @@ app.use('/api/maps', mapRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' });
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
 });
 
-// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('❌ Error:', {
+  if (res.headersSent) {
+    return next(err);
+  }
+  
+  console.error('❌ Unhandled Error:', {
     message: err.message,
     stack: err.stack,
     url: req.url,
-    method: req.method,
-    body: req.body,
-    params: req.params,
-    query: req.query
+    method: req.method
   });
-  res.status(err.status || 500).json({
+  
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
     error: {
-      message: err.message || 'Internal Server Error'
+      message: status === 500 ? 'Internal Server Error' : err.message
     }
   });
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  process.exit(1);
 });
 
 // Database connection

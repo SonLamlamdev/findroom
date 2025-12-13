@@ -15,7 +15,10 @@ router.get('/:id', async (req, res) => {
     }
     res.json({ user });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -43,7 +46,10 @@ router.put('/profile', auth, upload.single('avatar'), async (req, res) => {
 
     res.json({ message: 'Profile updated successfully', user });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -58,7 +64,10 @@ router.put('/roommate-profile', auth, async (req, res) => {
 
     res.json({ message: 'Roommate profile updated successfully', user });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -75,7 +84,10 @@ router.put('/preferences', auth, async (req, res) => {
 
     res.json({ message: 'Preferences updated successfully', user });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -97,7 +109,10 @@ router.post('/saved-listings/:listingId', auth, async (req, res) => {
       res.json({ message: 'Listing saved', saved: true });
     }
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -157,10 +172,9 @@ router.get('/saved-listings', auth, async (req, res) => {
       stack: error.stack,
       userId: req.userId
     });
-    res.status(500).json({ 
-      error: 'Server error',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch saved listings'
-    });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -185,7 +199,10 @@ router.post('/stayed-listings/:listingId', auth, async (req, res) => {
       res.json({ message: 'Listing already marked as stayed', stayed: true });
     }
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -238,10 +255,9 @@ router.get('/stayed-listings', auth, async (req, res) => {
       stack: error.stack,
       userId: req.userId
     });
-    res.status(500).json({ 
-      error: 'Server error',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch stayed listings'
-    });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -261,7 +277,10 @@ router.post('/ban/:userId', auth, isAdmin, async (req, res) => {
 
     res.json({ message: 'User banned successfully', user });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -279,7 +298,10 @@ router.post('/unban/:userId', auth, isAdmin, async (req, res) => {
 
     res.json({ message: 'User unbanned successfully', user });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
