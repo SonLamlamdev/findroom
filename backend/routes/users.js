@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const Listing = require('../models/Listing');
 const { auth, isAdmin } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
@@ -140,16 +141,28 @@ router.post('/stayed-listings/:listingId', auth, async (req, res) => {
 // Get stayed listings
 router.get('/stayed-listings', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).populate({
-      path: 'stayedListings',
-      populate: { path: 'landlord', select: 'name avatar verifiedBadge' }
-    });
+    const user = await User.findById(req.userId);
     
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    res.json({ listings: user.stayedListings || [] });
+    // Populate listings and filter out any null values (deleted listings)
+    const populatedUser = await User.findById(req.userId)
+      .populate({
+        path: 'stayedListings',
+        populate: { 
+          path: 'landlord', 
+          select: 'name avatar verifiedBadge'
+        }
+      })
+      .lean();
+    
+    // Filter out null values (deleted listings that couldn't be populated)
+    const validListings = (populatedUser?.stayedListings || [])
+      .filter(listing => listing !== null && listing !== undefined);
+    
+    res.json({ listings: validListings });
   } catch (error) {
     console.error('Error fetching stayed listings:', error);
     res.status(500).json({ error: 'Server error', details: error.message });
