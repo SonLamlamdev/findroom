@@ -223,7 +223,13 @@ if (!process.env.MONGODB_URI) {
   console.warn('⚠️  Please create a .env file in the backend directory with MONGODB_URI');
 }
 
-mongoose.connect(MONGODB_URI)
+//mongoose.connect(MONGODB_URI)
+mongoose.connect(MONGODB_URI, {
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 10000,
+})
 .then(() => {
   console.log('✅ Connected to MongoDB successfully');
   console.log(`📦 Database: ${MONGODB_URI}`);
