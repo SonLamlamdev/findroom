@@ -1,30 +1,15 @@
 import axios from 'axios';
 
-const getApiUrl = () => {
-  const isProduction = import.meta.env.PROD;
-  
-  if (import.meta.env.VITE_API_URL) {
-    const url = import.meta.env.VITE_API_URL.trim();
-    return url.endsWith('/') ? url.slice(0, -1) : url;
-  }
-  
-  if (isProduction) {
-    const defaultBackend = 'https://student-accommodation-backend.onrender.com';
-    console.warn('⚠️ VITE_API_URL not set, using default:', defaultBackend);
-    return defaultBackend;
-  }
-  
-  return undefined;
-};
-
-const API_URL = getApiUrl();
+const BACKEND_URL = import.meta.env.VITE_API_URL 
+  ? import.meta.env.VITE_API_URL.trim().replace(/\/$/, '')
+  : 'https://student-accommodation-backend.onrender.com';
 
 const axiosInstance = axios.create({
-  baseURL: API_URL || undefined,
+  baseURL: BACKEND_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000,
+  timeout: 20000,
 });
 
 axiosInstance.interceptors.request.use(
@@ -74,22 +59,23 @@ axiosInstance.interceptors.response.use(
     }
     
     if (!error.response) {
-      const errorMessage = error.message || 'Network Error';
-      const fullURL = error.config?.baseURL 
-        ? `${error.config.baseURL}${error.config.url}` 
-        : error.config?.url;
+      const fullURL = error.config?.baseURL && error.config?.url
+        ? `${error.config.baseURL}${error.config.url}`
+        : error.config?.url || 'unknown';
       
       console.error('❌ Network Error:', {
-        message: errorMessage,
         code: error.code,
+        message: error.message,
         url: error.config?.url,
         baseURL: error.config?.baseURL,
-        fullURL: fullURL
+        fullURL: fullURL,
+        status: error.response?.status,
+        statusText: error.response?.statusText
       });
       
       if (error.code === 'ERR_NETWORK' || error.code === 'ECONNREFUSED') {
         error.userMessage = 'Không thể kết nối đến server. Vui lòng thử lại sau.';
-      } else if (errorMessage.includes('CORS') || error.code === 'ERR_CORS') {
+      } else if (error.code === 'ERR_CORS' || error.message?.includes('CORS')) {
         error.userMessage = 'Lỗi CORS. Vui lòng kiểm tra cấu hình backend.';
       } else if (error.code === 'ECONNABORTED') {
         error.userMessage = 'Request timeout. Vui lòng thử lại.';
