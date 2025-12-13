@@ -5,7 +5,7 @@ const { auth, isLandlord } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
 // Get all listings with filters
-/*router.get('/', async (req, res) => {
+router.get('/', async (req, res) => {
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
       res.status(503).json({ error: 'Request timeout' });
@@ -106,14 +106,6 @@ const upload = require('../middleware/upload');
       res.status(500).json({ error: 'Server error' });
     }
   }
-});*/
-router.get('/', async (req, res) => {
-  const listings = await Listing
-    .find({ status: 'available' })
-    .limit(5)
-    .lean();
-
-  res.json({ listings });
 });
 
 // Get single listing
