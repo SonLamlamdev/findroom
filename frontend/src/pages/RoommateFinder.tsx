@@ -285,10 +285,6 @@ const RoommateFinder = () => {
                     alt={selectedProfile.user.name}
                     className="w-24 h-24 rounded-full object-cover"
                   />
-                    <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                      <FiUser size={40} className="text-gray-400" />
-                    </div>
-                  )}
                   <div>
                     <h3 className="text-xl font-bold">{selectedProfile.user.name}</h3>
                     <p className="text-gray-600 dark:text-gray-400">

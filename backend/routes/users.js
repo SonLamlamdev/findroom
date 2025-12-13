@@ -144,9 +144,15 @@ router.get('/stayed-listings', auth, async (req, res) => {
       path: 'stayedListings',
       populate: { path: 'landlord', select: 'name avatar verifiedBadge' }
     });
-    res.json({ listings: user.stayedListings });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({ listings: user.stayedListings || [] });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error fetching stayed listings:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 });
 

@@ -52,12 +52,8 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
     }
 
     // Process uploaded images
-    const images = [];
-    if (req.files) {
-      req.files.forEach(file => {
-        images.push(`/uploads/${file.filename}`);
-      });
-    }
+    const { getFileUrls } = require('../utils/fileHelper');
+    const images = getFileUrls(req.files || []);
 
     const review = new Review({
       ...reviewData,
