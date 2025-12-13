@@ -5,21 +5,7 @@ const { auth, isLandlord } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
 // Get all listings with filters
-<<<<<<< HEAD
-<<<<<<< HEAD
 router.get('/', async (req, res) => {
-=======
-/*router.get('/', async (req, res) => {
-=======
-router.get('/', async (req, res) => {
->>>>>>> 4bd4fbd490459a9ebfe67d39f336c9e90932a97c
-  const timeout = setTimeout(() => {
-    if (!res.headersSent) {
-      res.status(503).json({ error: 'Request timeout' });
-    }
-  }, 1900);
-
->>>>>>> f4efcc15140d5cb179143445789cd5d78bc77f5d
   try {
     const {
       search,
