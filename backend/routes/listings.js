@@ -31,7 +31,6 @@ router.get('/', async (req, res) => {
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
         { 'location.address': { $regex: search, $options: 'i' } },
         { 'location.district': { $regex: search, $options: 'i' } }
       ];
@@ -71,27 +70,30 @@ router.get('/', async (req, res) => {
     else if (sort === 'newest') sortOption = '-createdAt';
     else if (sort === 'oldest') sortOption = 'createdAt';
 
-    const [listings, total] = await Promise.all([
-      Listing.find(query)
-        .select('-searchKeywords -viewsHistory')
-        .populate('landlord', '_id name avatar verifiedBadge')
-        .sort(sortOption)
-        .limit(safeLimit)
-        .skip(skip)
-        .lean()
-        .maxTimeMS(1000),
-      Listing.countDocuments(query).maxTimeMS(500)
-    ]);
+    const listingsPromise = Listing.find(query)
+      .select('_id title price deposit location roomDetails amenities utilities images videos rules availableFrom status featured verified views saves rating landlord createdAt updatedAt')
+      .populate('landlord', '_id name avatar verifiedBadge')
+      .sort(sortOption)
+      .limit(safeLimit)
+      .skip(skip)
+      .lean()
+      .maxTimeMS(800);
 
-    res.json({
-      listings,
-      pagination: {
-        page: safePage,
-        limit: safeLimit,
-        total,
-        pages: Math.ceil(total / safeLimit)
-      }
-    });
+    const countPromise = Listing.countDocuments(query).maxTimeMS(400);
+
+    const [listings, total] = await Promise.all([listingsPromise, countPromise]);
+
+    if (!res.headersSent) {
+      res.json({
+        listings: listings || [],
+        pagination: {
+          page: safePage,
+          limit: safeLimit,
+          total: total || 0,
+          pages: Math.ceil((total || 0) / safeLimit)
+        }
+      });
+    }
   } catch (error) {
     console.error('❌ Error fetching listings:', error.message);
     if (!res.headersSent) {
