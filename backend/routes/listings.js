@@ -71,15 +71,15 @@ router.get('/', async (req, res) => {
     else if (sort === 'oldest') sortOption = 'createdAt';
 
     const listingsPromise = Listing.find(query)
-      .select('_id title price deposit location roomDetails amenities utilities images videos rules availableFrom status featured verified views saves rating landlord createdAt updatedAt')
-      .populate('landlord', '_id name avatar verifiedBadge')
+      .select('_id title price customId location roomDetails.area roomDetails.roomType images landlord rating views createdAt')
+      .populate('landlord', '_id name verifiedBadge')
       .sort(sortOption)
       .limit(safeLimit)
       .skip(skip)
       .lean()
-      .maxTimeMS(800);
+      .maxTimeMS(500);
 
-    const countPromise = Listing.countDocuments(query).maxTimeMS(400);
+    const countPromise = Listing.countDocuments(query).maxTimeMS(200);
 
     const [listings, total] = await Promise.all([listingsPromise, countPromise]);
 
@@ -108,7 +108,7 @@ router.get('/:id', async (req, res) => {
     const listing = await Listing.findById(req.params.id)
       .populate('landlord', '_id name email phone avatar verifiedBadge')
       .lean()
-      .maxTimeMS(1000);
+      .maxTimeMS(800);
     
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' });
@@ -405,11 +405,12 @@ router.get('/landlord/:landlordId', async (req, res) => {
     const listings = await Listing.find({ 
       landlord: req.params.landlordId 
     })
-      .select('-searchKeywords -viewsHistory')
+      .select('_id title price customId location roomDetails.area roomDetails.roomType images landlord rating views createdAt status')
+      .populate('landlord', '_id name verifiedBadge')
       .sort('-createdAt')
       .limit(100)
       .lean()
-      .maxTimeMS(1000);
+      .maxTimeMS(600);
 
     res.json({ listings });
   } catch (error) {
