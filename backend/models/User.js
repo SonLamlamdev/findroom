@@ -130,6 +130,13 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
+// Indexes for better query performance
+userSchema.index({ email: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ 'roommateProfile.lookingForRoommate': 1 });
+userSchema.index({ savedListings: 1 });
+userSchema.index({ stayedListings: 1 });
+
 module.exports = mongoose.model('User', userSchema);
 
 

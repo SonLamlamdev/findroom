@@ -11,11 +11,13 @@ router.get('/conversations', auth, async (req, res) => {
     const allConversations = await Conversation.find({
       participants: req.userId
     })
-      .populate('participants', 'name email avatar role')
-      .populate('listing', 'title images price location')
+      .populate('participants', '_id name email avatar role')
+      .populate('listing', '_id title images price location')
       .populate('lastMessage')
       .sort('-lastMessageAt')
-      .limit(50);
+      .limit(50)
+      .lean()
+      .maxTimeMS(1000);
 
     // Group conversations by landlord (other participant) instead of by listing
     // This means if a landlord has multiple listings, all conversations with that landlord
@@ -62,7 +64,9 @@ router.get('/conversations', auth, async (req, res) => {
     res.json({ conversations });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 

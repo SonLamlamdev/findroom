@@ -6,12 +6,6 @@ const upload = require('../middleware/upload');
 
 // Get all listings with filters
 router.get('/', async (req, res) => {
-  const timeout = setTimeout(() => {
-    if (!res.headersSent) {
-      res.status(503).json({ error: 'Request timeout' });
-    }
-  }, 1900);
-
   try {
     const {
       search,
@@ -85,11 +79,10 @@ router.get('/', async (req, res) => {
         .limit(safeLimit)
         .skip(skip)
         .lean()
-        .maxTimeMS(1500),
-      Listing.countDocuments(query).maxTimeMS(800)
+        .maxTimeMS(1000),
+      Listing.countDocuments(query).maxTimeMS(500)
     ]);
 
-    clearTimeout(timeout);
     res.json({
       listings,
       pagination: {
@@ -100,7 +93,6 @@ router.get('/', async (req, res) => {
       }
     });
   } catch (error) {
-    clearTimeout(timeout);
     console.error('❌ Error fetching listings:', error.message);
     if (!res.headersSent) {
       res.status(500).json({ error: 'Server error' });
@@ -112,30 +104,18 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const listing = await Listing.findById(req.params.id)
-      .populate('landlord', '_id name email phone avatar verifiedBadge');
+      .populate('landlord', '_id name email phone avatar verifiedBadge')
+      .lean()
+      .maxTimeMS(1000);
     
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' });
     }
 
-    // Increment views
-    listing.views += 1;
-    
-    // Update views history
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const viewToday = listing.viewsHistory.find(v => 
-      v.date.getTime() === today.getTime()
-    );
-    
-    if (viewToday) {
-      viewToday.count += 1;
-    } else {
-      listing.viewsHistory.push({ date: today, count: 1 });
-    }
-    
-    await listing.save();
+    // Increment views (non-blocking update)
+    Listing.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } })
+      .exec()
+      .catch(err => console.error('View increment error:', err.message));
 
     res.json({ listing });
   } catch (error) {
@@ -175,9 +155,16 @@ router.post('/', auth, isLandlord, upload.array('media', 10), async (req, res) =
       return res.status(400).json({ error: 'Vui lòng nhập diện tích phòng.' });
     }
     
+    // Upload files to Cloudinary in parallel
+    const upload = require('../middleware/upload');
+    let processedFiles = [];
+    if (req.files && req.files.length > 0) {
+      processedFiles = await upload.uploadToCloudinary(req.files, 'findroom/listings');
+    }
+    
     // Process uploaded files
     const { separateMedia } = require('../utils/fileHelper');
-    const { images, videos } = separateMedia(req.files || []);
+    const { images, videos } = separateMedia(processedFiles);
 
     // Validate that at least one image is uploaded
     if (images.length === 0 && videos.length === 0) {
@@ -250,10 +237,17 @@ router.put('/:id', auth, isLandlord, upload.array('media', 10), async (req, res)
       updates = req.body;
     }
 
-    // Process new uploaded files
+    // Upload new files to Cloudinary in parallel
+    let processedFiles = [];
     if (req.files && req.files.length > 0) {
+      const upload = require('../middleware/upload');
+      processedFiles = await upload.uploadToCloudinary(req.files, 'findroom/listings');
+    }
+    
+    // Process new uploaded files
+    if (processedFiles.length > 0) {
       const { separateMedia } = require('../utils/fileHelper');
-      const { images: newImages, videos: newVideos } = separateMedia(req.files);
+      const { images: newImages, videos: newVideos } = separateMedia(processedFiles);
 
       if (newImages.length > 0) {
         updates.images = [...(listing.images || []), ...newImages];
@@ -380,7 +374,12 @@ router.get('/landlord/:landlordId', async (req, res) => {
   try {
     const listings = await Listing.find({ 
       landlord: req.params.landlordId 
-    }).sort('-createdAt');
+    })
+      .select('-searchKeywords -viewsHistory')
+      .sort('-createdAt')
+      .limit(100)
+      .lean()
+      .maxTimeMS(1000);
 
     res.json({ listings });
   } catch (error) {

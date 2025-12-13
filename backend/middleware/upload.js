@@ -60,37 +60,14 @@ if (useCloudinary) {
       process.env.CLOUDINARY_URL = cloudinaryUrlBackup;
     }
 
-    storage = new CloudinaryStorage({
-      cloudinary: cloudinary,
-      params: async (req, file) => {
-        // Determine folder based on file type or route
-        let folder = 'findroom';
-        
-        // Check if this is an avatar upload (from user profile)
-        if (file.fieldname === 'avatar') {
-          folder = 'findroom/avatars';
-        } else if (file.fieldname === 'images' || file.fieldname === 'media') {
-          // Check route to determine if it's listing or blog
-          if (req.route?.path?.includes('blog')) {
-            folder = 'findroom/blogs';
-          } else {
-            folder = 'findroom/listings';
-          }
-        }
-        
-        return {
-          folder: folder,
-          allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'mp4', 'mov', 'avi', 'wmv', 'flv', 'webm', 'mkv', 'm4v'],
-          resource_type: file.mimetype.startsWith('video/') ? 'video' : 'image',
-          transformation: [
-            // Auto-optimize images
-            { quality: 'auto', fetch_format: 'auto' }
-          ]
-        };
-      }
-    });
+    // Use memory storage for parallel uploads
+    storage = multer.memoryStorage();
+    
+    // Store Cloudinary instance for manual uploads
+    module.exports.cloudinary = cloudinary;
+    module.exports.useCloudinary = true;
 
-    console.log('✅ Using Cloudinary for file storage');
+    console.log('✅ Using Cloudinary for file storage (parallel uploads enabled)');
   } catch (error) {
     // Log full error details for debugging
     console.error('❌ Cloudinary configuration error:');
@@ -136,22 +113,85 @@ if (!useCloudinary) {
   console.log('💡 To use Cloudinary:');
   console.log('   1. Run: npm install cloudinary multer-storage-cloudinary');
   console.log('   2. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in .env');
+  module.exports.useCloudinary = false;
+  module.exports.cloudinary = null;
 }
 
-// File filter
-const fileFilter = (req, file, cb) => {
-  // Allowed file extensions
-  const allowedExtensions = /\.(jpeg|jpg|png|gif|webp|bmp|svg|mp4|mov|avi|wmv|flv|webm|mkv|m4v)$/i;
+// Helper function to upload files to Cloudinary in parallel
+module.exports.uploadToCloudinary = async (files, folder = 'findroom') => {
+  if (!module.exports.useCloudinary || !module.exports.cloudinary) {
+    return files.map(file => ({
+      ...file,
+      path: `/uploads/${file.filename}`,
+      url: `/uploads/${file.filename}`
+    }));
+  }
+
+  const cloudinary = module.exports.cloudinary;
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   
-  // Allowed MIME types
+  // Validate file sizes before upload
+  const validFiles = files.filter(file => {
+    if (file.size > MAX_FILE_SIZE) {
+      console.warn(`File ${file.originalname} exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`);
+      return false;
+    }
+    return true;
+  });
+  
+  if (validFiles.length === 0) {
+    throw new Error('All files exceed size limit');
+  }
+  
+  // Upload files in parallel
+  const uploadPromises = validFiles.map(file => {
+    const resourceType = file.mimetype.startsWith('video/') ? 'video' : 'image';
+    
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: folder,
+          resource_type: resourceType,
+          quality: 'auto:good',
+          fetch_format: 'auto',
+          timeout: 60000,
+          chunk_size: 6000000
+        },
+        (error, result) => {
+          if (error) {
+            console.error('Cloudinary upload error:', error);
+            reject(error);
+          } else {
+            resolve({
+              ...file,
+              path: result.secure_url,
+              url: result.secure_url,
+              public_id: result.public_id
+            });
+          }
+        }
+      );
+      
+      uploadStream.end(file.buffer);
+    });
+  });
+
+  return Promise.all(uploadPromises);
+};
+
+// File filter - reject BMP and validate file size
+const fileFilter = (req, file, cb) => {
+  // Allowed file extensions (BMP excluded)
+  const allowedExtensions = /\.(jpeg|jpg|png|gif|webp|svg|mp4|mov|avi|wmv|flv|webm|mkv|m4v)$/i;
+  
+  // Allowed MIME types (BMP excluded)
   const allowedMimeTypes = [
-    // Images
+    // Images (BMP excluded)
     'image/jpeg',
     'image/jpg',
     'image/png',
     'image/gif',
     'image/webp',
-    'image/bmp',
     'image/svg+xml',
     // Videos
     'video/mp4',
@@ -164,29 +204,25 @@ const fileFilter = (req, file, cb) => {
     'video/x-m4v'      // m4v
   ];
 
-  // Get file extension (remove the dot)
+  // Get file extension
   const fileExtension = path.extname(file.originalname).toLowerCase();
+  const isBMP = fileExtension === '.bmp' || file.mimetype === 'image/bmp';
+  
+  // Reject BMP explicitly
+  if (isBMP) {
+    const error = new Error('BMP format is not supported. Please use JPG, PNG, GIF, or WebP.');
+    console.error('❌ BMP file rejected:', file.originalname);
+    return cb(error);
+  }
+
   const hasValidExtension = allowedExtensions.test(fileExtension);
   const hasValidMimeType = allowedMimeTypes.includes(file.mimetype);
 
-  // Log for debugging (only in development)
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('📁 File upload check:', {
-      filename: file.originalname,
-      mimetype: file.mimetype,
-      extension: fileExtension,
-      validExtension: hasValidExtension,
-      validMimeType: hasValidMimeType
-    });
-  }
-
-  // Allow if either extension OR mimetype is valid
-  // This is more flexible and handles edge cases
   if (hasValidExtension || hasValidMimeType) {
     return cb(null, true);
   } else {
     const error = new Error(
-      `File type not allowed. Only images (jpg, png, gif, webp, etc.) and videos (mp4, mov, avi, etc.) are allowed. ` +
+      `File type not allowed. Only images (jpg, png, gif, webp, svg) and videos (mp4, mov, avi, etc.) are allowed. ` +
       `Received: ${file.mimetype} (${fileExtension})`
     );
     console.error('❌ File upload rejected:', {

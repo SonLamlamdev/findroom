@@ -11,7 +11,11 @@ router.get('/stats', auth, isLandlord, async (req, res) => {
     const { period = 'month' } = req.query; // week, month, year
     
     // Get landlord's listings
-    const listings = await Listing.find({ landlord: req.userId });
+    const listings = await Listing.find({ landlord: req.userId })
+      .select('_id title price location viewsHistory searchKeywords')
+      .lean()
+      .maxTimeMS(1000);
+    
     const listingIds = listings.map(l => l._id);
 
     // Calculate date range
@@ -34,9 +38,9 @@ router.get('/stats', auth, isLandlord, async (req, res) => {
     const viewsByListing = [];
 
     listings.forEach(listing => {
-      const periodViews = listing.viewsHistory
-        .filter(v => v.date >= startDate)
-        .reduce((sum, v) => sum + v.count, 0);
+      const periodViews = (listing.viewsHistory || [])
+        .filter(v => new Date(v.date) >= startDate)
+        .reduce((sum, v) => sum + (v.count || 0), 0);
       
       totalViews += periodViews;
       
@@ -47,42 +51,52 @@ router.get('/stats', auth, isLandlord, async (req, res) => {
       });
     });
 
+    const sampleListing = listings[0];
+
+    // Parallel queries
+    const [savedByUsers, reviews, areaListings] = await Promise.all([
+      User.find({
+        savedListings: { $in: listingIds }
+      })
+        .select('savedListings')
+        .lean()
+        .maxTimeMS(1000),
+      Review.find({ listing: { $in: listingIds } })
+        .select('rating.overall landlordResponse')
+        .lean()
+        .maxTimeMS(1000),
+      sampleListing ? Listing.find({
+        'location.city': sampleListing.location.city,
+        'location.district': sampleListing.location.district,
+        status: 'available'
+      })
+        .select('price')
+        .lean()
+        .maxTimeMS(1000) : Promise.resolve([])
+    ]);
+
     // Total saves
-    const savedByUsers = await User.find({
-      savedListings: { $in: listingIds }
-    });
     const totalSaves = savedByUsers.reduce((count, user) => {
       return count + user.savedListings.filter(id => 
-        listingIds.some(listingId => listingId.equals(id))
+        listingIds.some(listingId => listingId.toString() === id.toString())
       ).length;
     }, 0);
 
     // Average price comparison
-    const landlordAvgPrice = listings.reduce((sum, l) => sum + l.price, 0) / listings.length || 0;
-    
-    // Get area average (assuming same city/district)
-    const sampleListing = listings[0];
-    let areaAvgPrice = 0;
-    
-    if (sampleListing) {
-      const areaListings = await Listing.find({
-        'location.city': sampleListing.location.city,
-        'location.district': sampleListing.location.district,
-        status: 'available'
-      });
-      
-      areaAvgPrice = areaListings.reduce((sum, l) => sum + l.price, 0) / areaListings.length || 0;
-    }
+    const landlordAvgPrice = listings.reduce((sum, l) => sum + (l.price || 0), 0) / listings.length || 0;
+    const areaAvgPrice = areaListings.length > 0 
+      ? areaListings.reduce((sum, l) => sum + (l.price || 0), 0) / areaListings.length 
+      : 0;
 
     // Top search keywords
     const allKeywords = [];
     listings.forEach(listing => {
-      listing.searchKeywords.forEach(kw => {
+      (listing.searchKeywords || []).forEach(kw => {
         const existing = allKeywords.find(k => k.keyword === kw.keyword);
         if (existing) {
-          existing.count += kw.count;
+          existing.count += kw.count || 0;
         } else {
-          allKeywords.push({ keyword: kw.keyword, count: kw.count });
+          allKeywords.push({ keyword: kw.keyword, count: kw.count || 0 });
         }
       });
     });
@@ -92,8 +106,9 @@ router.get('/stats', auth, isLandlord, async (req, res) => {
       .slice(0, 10);
 
     // Reviews statistics
-    const reviews = await Review.find({ listing: { $in: listingIds } });
-    const avgRating = reviews.reduce((sum, r) => sum + r.rating.overall, 0) / reviews.length || 0;
+    const avgRating = reviews.length > 0 
+      ? reviews.reduce((sum, r) => sum + (r.rating?.overall || 0), 0) / reviews.length 
+      : 0;
 
     // Response rate
     const responsesCount = reviews.filter(r => r.landlordResponse).length;
@@ -130,7 +145,10 @@ router.get('/stats', auth, isLandlord, async (req, res) => {
 // Get detailed analytics for a specific listing
 router.get('/listing/:id/analytics', auth, isLandlord, async (req, res) => {
   try {
-    const listing = await Listing.findById(req.params.id);
+    const listing = await Listing.findById(req.params.id)
+      .select('_id landlord views viewsHistory searchKeywords rating')
+      .lean()
+      .maxTimeMS(500);
     
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' });
@@ -141,7 +159,7 @@ router.get('/listing/:id/analytics', auth, isLandlord, async (req, res) => {
     }
 
     // Views over time (last 30 days)
-    const viewsTimeline = listing.viewsHistory
+    const viewsTimeline = (listing.viewsHistory || [])
       .slice(-30)
       .map(v => ({
         date: v.date,
@@ -151,18 +169,20 @@ router.get('/listing/:id/analytics', auth, isLandlord, async (req, res) => {
     // Get save count
     const saveCount = await User.countDocuments({
       savedListings: listing._id
-    });
+    }).maxTimeMS(500);
 
     res.json({
       listingId: listing._id,
-      totalViews: listing.views,
+      totalViews: listing.views || 0,
       viewsTimeline,
       saveCount,
-      searchKeywords: listing.searchKeywords,
-      rating: listing.rating
+      searchKeywords: listing.searchKeywords || [],
+      rating: listing.rating || { average: 0, count: 0 }
     });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 

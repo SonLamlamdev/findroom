@@ -12,8 +12,11 @@ router.put('/profile', auth, upload.single('avatar'), async (req, res) => {
     const updates = req.body;
     
     if (req.file) {
+      // Upload avatar to Cloudinary
+      const upload = require('../middleware/upload');
+      const processedFiles = await upload.uploadToCloudinary([req.file], 'findroom/avatars');
       const { getFileUrl } = require('../utils/fileHelper');
-      updates.avatar = getFileUrl(req.file) || `/uploads/${req.file.filename}`;
+      updates.avatar = getFileUrl(processedFiles[0]) || `/uploads/${req.file.filename}`;
     }
 
     // Don't allow updating sensitive fields
@@ -103,53 +106,34 @@ router.post('/saved-listings/:listingId', auth, async (req, res) => {
 // Get saved listings
 router.get('/saved-listings', auth, async (req, res) => {
   try {
-    // Validate userId exists
     if (!req.userId) {
       console.error('❌ No userId in request for saved-listings');
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.userId)
+      .select('savedListings')
+      .lean()
+      .maxTimeMS(500);
     
     if (!user) {
       console.error('❌ User not found for saved-listings:', req.userId);
       return res.status(404).json({ error: 'User not found' });
     }
     
-    // If user has no saved listings, return empty array
     if (!user.savedListings || user.savedListings.length === 0) {
       return res.json({ listings: [] });
     }
     
-    // Populate listings with error handling for each listing
-    const listings = [];
-    for (const listingId of user.savedListings) {
-      try {
-        // Validate ObjectId
-        if (!mongoose.Types.ObjectId.isValid(listingId)) {
-          console.warn(`Skipping invalid ObjectId in saved listings: ${listingId}`);
-          continue;
-        }
-        
-        const listing = await Listing.findById(listingId)
-          .populate('landlord', 'name avatar verifiedBadge')
-          .lean();
-        
-        if (listing && listing.landlord) {
-          listings.push(listing);
-        } else if (listing) {
-          // Listing exists but landlord was deleted, include it anyway
-          listing.landlord = null;
-          listings.push(listing);
-        }
-      } catch (listingError) {
-        // Skip invalid/deleted listings
-        console.warn(`Skipping invalid saved listing ${listingId}:`, listingError.message);
-        continue;
-      }
-    }
+    const validIds = user.savedListings.filter(id => mongoose.Types.ObjectId.isValid(id));
     
-    res.json({ listings });
+    const listings = await Listing.find({ _id: { $in: validIds } })
+      .select('-searchKeywords -viewsHistory')
+      .populate('landlord', '_id name avatar verifiedBadge')
+      .lean()
+      .maxTimeMS(1000);
+    
+    res.json({ listings: listings || [] });
   } catch (error) {
     console.error('❌ Error fetching saved listings:', {
       error: error.message,
@@ -193,46 +177,28 @@ router.post('/stayed-listings/:listingId', auth, async (req, res) => {
 // Get stayed listings
 router.get('/stayed-listings', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.userId)
+      .select('stayedListings')
+      .lean()
+      .maxTimeMS(500);
     
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    // If user has no stayed listings, return empty array
     if (!user.stayedListings || user.stayedListings.length === 0) {
       return res.json({ listings: [] });
     }
     
-    // Populate listings with error handling for each listing
-    const listings = [];
-    for (const listingId of user.stayedListings) {
-      try {
-        // Validate ObjectId
-        if (!mongoose.Types.ObjectId.isValid(listingId)) {
-          console.warn(`Skipping invalid ObjectId in stayed listings: ${listingId}`);
-          continue;
-        }
-        
-        const listing = await Listing.findById(listingId)
-          .populate('landlord', 'name avatar verifiedBadge')
-          .lean();
-        
-        if (listing && listing.landlord) {
-          listings.push(listing);
-        } else if (listing) {
-          // Listing exists but landlord was deleted, include it anyway
-          listing.landlord = null;
-          listings.push(listing);
-        }
-      } catch (listingError) {
-        // Skip invalid/deleted listings
-        console.warn(`Skipping invalid listing ${listingId}:`, listingError.message);
-        continue;
-      }
-    }
+    const validIds = user.stayedListings.filter(id => mongoose.Types.ObjectId.isValid(id));
     
-    res.json({ listings });
+    const listings = await Listing.find({ _id: { $in: validIds } })
+      .select('-searchKeywords -viewsHistory')
+      .populate('landlord', '_id name avatar verifiedBadge')
+      .lean()
+      .maxTimeMS(1000);
+    
+    res.json({ listings: listings || [] });
   } catch (error) {
     console.error('❌ Error fetching stayed listings:', {
       error: error.message,

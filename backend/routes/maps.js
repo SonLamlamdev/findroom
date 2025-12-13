@@ -372,7 +372,13 @@ router.post('/flood-reports', auth, upload.single('images'), async (req, res) =>
     // Handle uploaded image
     const images = [];
     if (req.file) {
-      images.push(`/uploads/${req.file.filename}`);
+      const upload = require('../middleware/upload');
+      const processedFiles = await upload.uploadToCloudinary([req.file], 'findroom/flood-reports');
+      const { getFileUrl } = require('../utils/fileHelper');
+      const imageUrl = getFileUrl(processedFiles[0]);
+      if (imageUrl) {
+        images.push(imageUrl);
+      }
     }
     
     const report = new FloodReport({
