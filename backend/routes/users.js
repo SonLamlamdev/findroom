@@ -147,25 +147,40 @@ router.get('/stayed-listings', auth, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    // Populate listings and filter out any null values (deleted listings)
-    const populatedUser = await User.findById(req.userId)
-      .populate({
-        path: 'stayedListings',
-        populate: { 
-          path: 'landlord', 
-          select: 'name avatar verifiedBadge'
+    // If user has no stayed listings, return empty array
+    if (!user.stayedListings || user.stayedListings.length === 0) {
+      return res.json({ listings: [] });
+    }
+    
+    // Populate listings with error handling for each listing
+    const listings = [];
+    for (const listingId of user.stayedListings) {
+      try {
+        const listing = await Listing.findById(listingId)
+          .populate('landlord', 'name avatar verifiedBadge')
+          .lean();
+        
+        if (listing) {
+          listings.push(listing);
         }
-      })
-      .lean();
+      } catch (listingError) {
+        // Skip invalid/deleted listings
+        console.warn(`Skipping invalid listing ${listingId}:`, listingError.message);
+        continue;
+      }
+    }
     
-    // Filter out null values (deleted listings that couldn't be populated)
-    const validListings = (populatedUser?.stayedListings || [])
-      .filter(listing => listing !== null && listing !== undefined);
-    
-    res.json({ listings: validListings });
+    res.json({ listings });
   } catch (error) {
-    console.error('Error fetching stayed listings:', error);
-    res.status(500).json({ error: 'Server error', details: error.message });
+    console.error('❌ Error fetching stayed listings:', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.userId
+    });
+    res.status(500).json({ 
+      error: 'Server error',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch stayed listings'
+    });
   }
 });
 
