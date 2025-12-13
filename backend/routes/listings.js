@@ -6,9 +6,13 @@ const upload = require('../middleware/upload');
 
 // Get all listings with filters
 <<<<<<< HEAD
+<<<<<<< HEAD
 router.get('/', async (req, res) => {
 =======
 /*router.get('/', async (req, res) => {
+=======
+router.get('/', async (req, res) => {
+>>>>>>> 4bd4fbd490459a9ebfe67d39f336c9e90932a97c
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
       res.status(503).json({ error: 'Request timeout' });
@@ -108,14 +112,6 @@ router.get('/', async (req, res) => {
       res.status(500).json({ error: 'Server error' });
     }
   }
-});*/
-router.get('/', async (req, res) => {
-  const listings = await Listing
-    .find({ status: 'available' })
-    .limit(5)
-    .lean();
-
-  res.json({ listings });
 });
 
 // Get single listing
