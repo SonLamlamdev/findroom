@@ -45,7 +45,7 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 second timeout
+  timeout: 120000, // 30 second timeout (Extended to 120 second timeout *can change if needed)
 });
 
 // Warn if baseURL is not set in production
