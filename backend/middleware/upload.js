@@ -7,11 +7,27 @@ let useCloudinary =
   process.env.CLOUDINARY_API_KEY && 
   process.env.CLOUDINARY_API_SECRET;
 
-// Warn if CLOUDINARY_URL is set with invalid format
+// Handle invalid CLOUDINARY_URL before requiring Cloudinary
+// Cloudinary SDK reads CLOUDINARY_URL on module load, so we need to handle it first
+let cloudinaryUrlBackup = null;
 if (process.env.CLOUDINARY_URL && !process.env.CLOUDINARY_URL.startsWith('cloudinary://')) {
   console.warn('⚠️ CLOUDINARY_URL environment variable has invalid format.');
-  console.warn('💡 Please remove CLOUDINARY_URL or set it correctly.');
-  console.warn('💡 Using individual credentials (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) instead.');
+  console.warn('💡 Temporarily unsetting it to use individual credentials instead.');
+  console.warn('💡 Please remove CLOUDINARY_URL from environment variables or set it correctly.');
+  
+  // Backup the invalid URL and unset it before requiring Cloudinary
+  cloudinaryUrlBackup = process.env.CLOUDINARY_URL;
+  // Try both methods to unset the variable
+  try {
+    delete process.env.CLOUDINARY_URL;
+    // Also set to undefined as fallback
+    if (process.env.CLOUDINARY_URL) {
+      process.env.CLOUDINARY_URL = undefined;
+    }
+  } catch (e) {
+    // If delete fails, try setting to empty string
+    process.env.CLOUDINARY_URL = '';
+  }
 }
 
 let storage;
@@ -23,13 +39,18 @@ if (useCloudinary) {
     const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
     // Configure Cloudinary using individual credentials
-    // This will override any CLOUDINARY_URL that might be set
+    // This ensures we use the correct credentials even if CLOUDINARY_URL was invalid
     cloudinary.config({
       cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
       api_key: process.env.CLOUDINARY_API_KEY,
       api_secret: process.env.CLOUDINARY_API_SECRET,
       secure: true // Use HTTPS
     });
+
+    // Restore CLOUDINARY_URL if we backed it up (though it won't be used)
+    if (cloudinaryUrlBackup) {
+      process.env.CLOUDINARY_URL = cloudinaryUrlBackup;
+    }
 
     storage = new CloudinaryStorage({
       cloudinary: cloudinary,
