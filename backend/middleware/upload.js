@@ -7,6 +7,13 @@ let useCloudinary =
   process.env.CLOUDINARY_API_KEY && 
   process.env.CLOUDINARY_API_SECRET;
 
+// Warn if CLOUDINARY_URL is set with invalid format
+if (process.env.CLOUDINARY_URL && !process.env.CLOUDINARY_URL.startsWith('cloudinary://')) {
+  console.warn('⚠️ CLOUDINARY_URL environment variable has invalid format.');
+  console.warn('💡 Please remove CLOUDINARY_URL or set it correctly.');
+  console.warn('💡 Using individual credentials (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) instead.');
+}
+
 let storage;
 
 if (useCloudinary) {
@@ -15,10 +22,13 @@ if (useCloudinary) {
     const cloudinary = require('cloudinary').v2;
     const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
+    // Configure Cloudinary using individual credentials
+    // This will override any CLOUDINARY_URL that might be set
     cloudinary.config({
       cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
       api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+      secure: true // Use HTTPS
     });
 
     storage = new CloudinaryStorage({
@@ -54,9 +64,17 @@ if (useCloudinary) {
     console.log('✅ Using Cloudinary for file storage');
   } catch (error) {
     console.warn('⚠️ Cloudinary configuration error:', error.message);
+    
     if (error.message.includes('not installed')) {
       console.log('💡 To use Cloudinary, run: npm install cloudinary multer-storage-cloudinary');
+    } else if (error.message.includes('CLOUDINARY_URL') || error.message.includes('protocol')) {
+      console.log('💡 CLOUDINARY_URL environment variable has invalid format.');
+      console.log('💡 Please either:');
+      console.log('   1. Remove CLOUDINARY_URL and use CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET');
+      console.log('   2. Or set CLOUDINARY_URL in format: cloudinary://api_key:api_secret@cloud_name');
+      console.log('💡 Make sure you have set: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET');
     }
+    
     console.log('📁 Falling back to local storage (uploads/)');
     useCloudinary = false;
   }

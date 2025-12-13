@@ -1,29 +1,39 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Listings from './pages/Listings';
-import ListingDetail from './pages/ListingDetail';
-import MapView from './pages/MapView';
-import Dashboard from './pages/Dashboard';
-import CreateListing from './pages/CreateListing';
-import EditListing from './pages/EditListing';
-import RoommateFinder from './pages/RoommateFinder';
-import Blog from './pages/Blog';
-import BlogPost from './pages/BlogPost';
-import CreateBlog from './pages/CreateBlog';
-import Profile from './pages/Profile';
-import SavedListings from './pages/SavedListings';
-import StayedListings from './pages/StayedListings';
-import SavedRoommates from './pages/SavedRoommates';
-import Messages from './pages/Messages';
-import AdminPanel from './pages/AdminPanel';
 import ProtectedRoute from './components/ProtectedRoute';
+
+// Lazy load pages for code splitting
+const Home = lazy(() => import('./pages/Home'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Listings = lazy(() => import('./pages/Listings'));
+const ListingDetail = lazy(() => import('./pages/ListingDetail'));
+const MapView = lazy(() => import('./pages/MapView'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const CreateListing = lazy(() => import('./pages/CreateListing'));
+const EditListing = lazy(() => import('./pages/EditListing'));
+const RoommateFinder = lazy(() => import('./pages/RoommateFinder'));
+const Blog = lazy(() => import('./pages/Blog'));
+const BlogPost = lazy(() => import('./pages/BlogPost'));
+const CreateBlog = lazy(() => import('./pages/CreateBlog'));
+const Profile = lazy(() => import('./pages/Profile'));
+const SavedListings = lazy(() => import('./pages/SavedListings'));
+const StayedListings = lazy(() => import('./pages/StayedListings'));
+const SavedRoommates = lazy(() => import('./pages/SavedRoommates'));
+const Messages = lazy(() => import('./pages/Messages'));
+const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+
+// Loading component
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+);
 
 function App() {
   return (
@@ -33,7 +43,8 @@ function App() {
           <div className="min-h-screen flex flex-col">
             <Navbar />
             <main className="flex-grow">
-              <Routes>
+              <Suspense fallback={<LoadingSpinner />}>
+                <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
@@ -106,6 +117,7 @@ function App() {
                   </ProtectedRoute>
                 } />
               </Routes>
+              </Suspense>
             </main>
             <Footer />
           </div>
