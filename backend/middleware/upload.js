@@ -36,7 +36,15 @@ if (useCloudinary) {
   // Try to use Cloudinary
   try {
     const cloudinary = require('cloudinary').v2;
-    const { CloudinaryStorage } = require('multer-storage-cloudinary');
+    const multerStorageCloudinary = require('multer-storage-cloudinary');
+    
+    // CloudinaryStorage might be exported as named export or default
+    const CloudinaryStorage = multerStorageCloudinary.CloudinaryStorage || multerStorageCloudinary.default || multerStorageCloudinary;
+    
+    // Verify it's a constructor/class
+    if (typeof CloudinaryStorage !== 'function') {
+      throw new Error('CloudinaryStorage is not a constructor. Package may need to be reinstalled.');
+    }
 
     // Configure Cloudinary using individual credentials
     // This ensures we use the correct credentials even if CLOUDINARY_URL was invalid
@@ -86,8 +94,14 @@ if (useCloudinary) {
   } catch (error) {
     console.warn('⚠️ Cloudinary configuration error:', error.message);
     
-    if (error.message.includes('not installed')) {
+    if (error.message.includes('not installed') || error.message.includes('Cannot find module')) {
       console.log('💡 To use Cloudinary, run: npm install cloudinary multer-storage-cloudinary');
+      console.log('💡 Then restart the server');
+    } else if (error.message.includes('CloudinaryStorage is not a constructor')) {
+      console.log('💡 CloudinaryStorage import error. This may be due to:');
+      console.log('   1. Package not installed correctly - try: npm install multer-storage-cloudinary');
+      console.log('   2. Package version mismatch - try: npm install multer-storage-cloudinary@latest');
+      console.log('   3. Clear node_modules and reinstall: rm -rf node_modules package-lock.json && npm install');
     } else if (error.message.includes('CLOUDINARY_URL') || error.message.includes('protocol')) {
       console.log('💡 CLOUDINARY_URL environment variable has invalid format.');
       console.log('💡 Please either:');
