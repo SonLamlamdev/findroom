@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const Listing = require('../models/Listing');
 const { auth, isAdmin } = require('../middleware/auth');
@@ -103,13 +104,56 @@ router.post('/saved-listings/:listingId', auth, async (req, res) => {
 // Get saved listings
 router.get('/saved-listings', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).populate({
-      path: 'savedListings',
-      populate: { path: 'landlord', select: 'name avatar verifiedBadge' }
-    });
-    res.json({ listings: user.savedListings });
+    const user = await User.findById(req.userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // If user has no saved listings, return empty array
+    if (!user.savedListings || user.savedListings.length === 0) {
+      return res.json({ listings: [] });
+    }
+    
+    // Populate listings with error handling for each listing
+    const listings = [];
+    for (const listingId of user.savedListings) {
+      try {
+        // Validate ObjectId
+        if (!mongoose.Types.ObjectId.isValid(listingId)) {
+          console.warn(`Skipping invalid ObjectId in saved listings: ${listingId}`);
+          continue;
+        }
+        
+        const listing = await Listing.findById(listingId)
+          .populate('landlord', 'name avatar verifiedBadge')
+          .lean();
+        
+        if (listing && listing.landlord) {
+          listings.push(listing);
+        } else if (listing) {
+          // Listing exists but landlord was deleted, include it anyway
+          listing.landlord = null;
+          listings.push(listing);
+        }
+      } catch (listingError) {
+        // Skip invalid/deleted listings
+        console.warn(`Skipping invalid saved listing ${listingId}:`, listingError.message);
+        continue;
+      }
+    }
+    
+    res.json({ listings });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error fetching saved listings:', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.userId
+    });
+    res.status(500).json({ 
+      error: 'Server error',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch saved listings'
+    });
   }
 });
 
@@ -156,11 +200,21 @@ router.get('/stayed-listings', auth, async (req, res) => {
     const listings = [];
     for (const listingId of user.stayedListings) {
       try {
+        // Validate ObjectId
+        if (!mongoose.Types.ObjectId.isValid(listingId)) {
+          console.warn(`Skipping invalid ObjectId in stayed listings: ${listingId}`);
+          continue;
+        }
+        
         const listing = await Listing.findById(listingId)
           .populate('landlord', 'name avatar verifiedBadge')
           .lean();
         
-        if (listing) {
+        if (listing && listing.landlord) {
+          listings.push(listing);
+        } else if (listing) {
+          // Listing exists but landlord was deleted, include it anyway
+          listing.landlord = null;
           listings.push(listing);
         }
       } catch (listingError) {
