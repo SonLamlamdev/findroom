@@ -92,7 +92,12 @@ if (useCloudinary) {
 
     console.log('✅ Using Cloudinary for file storage');
   } catch (error) {
-    console.warn('⚠️ Cloudinary configuration error:', error.message);
+    // Log full error details for debugging
+    console.error('❌ Cloudinary configuration error:');
+    console.error('   Message:', error.message);
+    console.error('   Stack:', error.stack);
+    if (error.name) console.error('   Error Name:', error.name);
+    if (error.code) console.error('   Error Code:', error.code);
     
     if (error.message.includes('not installed') || error.message.includes('Cannot find module')) {
       console.log('💡 To use Cloudinary, run: npm install cloudinary multer-storage-cloudinary');
