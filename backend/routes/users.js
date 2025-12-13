@@ -103,13 +103,46 @@ router.post('/saved-listings/:listingId', auth, async (req, res) => {
 // Get saved listings
 router.get('/saved-listings', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).populate({
-      path: 'savedListings',
-      populate: { path: 'landlord', select: 'name avatar verifiedBadge' }
-    });
-    res.json({ listings: user.savedListings });
+    const user = await User.findById(req.userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // If user has no saved listings, return empty array
+    if (!user.savedListings || user.savedListings.length === 0) {
+      return res.json({ listings: [] });
+    }
+    
+    // Populate listings with error handling for each listing
+    const listings = [];
+    for (const listingId of user.savedListings) {
+      try {
+        const listing = await Listing.findById(listingId)
+          .populate('landlord', 'name avatar verifiedBadge')
+          .lean();
+        
+        if (listing) {
+          listings.push(listing);
+        }
+      } catch (listingError) {
+        // Skip invalid/deleted listings
+        console.warn(`Skipping invalid saved listing ${listingId}:`, listingError.message);
+        continue;
+      }
+    }
+    
+    res.json({ listings });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error fetching saved listings:', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.userId
+    });
+    res.status(500).json({ 
+      error: 'Server error',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch saved listings'
+    });
   }
 });
 
