@@ -4,6 +4,7 @@ import axios from '../config/axios';
 import toast from 'react-hot-toast';
 import MapPicker from '../components/MapPicker';
 import { FiUpload, FiX } from 'react-icons/fi';
+import { getImageUrl } from '../utils/imageHelper';
 
 const EditListing = () => {
   const { id } = useParams();
@@ -222,7 +223,7 @@ const EditListing = () => {
                   {existingImages.map((url, index) => (
                     <div key={index} className="relative group">
                       <img
-                        src={url}
+                        src={getImageUrl(url)}
                         alt={`Existing ${index + 1}`}
                         className="w-full h-32 object-cover rounded-lg"
                       />

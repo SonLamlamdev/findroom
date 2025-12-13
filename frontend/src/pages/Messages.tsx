@@ -5,6 +5,7 @@ import { FiSend, FiMessageCircle, FiHome, FiTrash2 } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../utils/errorHandler';
+import { getAvatarUrl } from '../utils/imageHelper';
 
 interface Conversation {
   _id: string;
@@ -298,18 +299,12 @@ const Messages = () => {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center">
-                        {other?.avatar ? (
-                          <img
-                            src={other.avatar}
-                            alt={other?.name}
-                            className="w-full h-full rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-primary-600 dark:text-primary-400 font-semibold">
-                            {other?.name?.charAt(0).toUpperCase()}
-                          </span>
-                        )}
+                      <div className="w-12 h-12 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center overflow-hidden">
+                        <img
+                          src={getAvatarUrl(other?.avatar)}
+                          alt={other?.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold truncate">{other?.name}</p>
@@ -348,18 +343,12 @@ const Messages = () => {
                   const other = getOtherParticipant(selectedConversation);
                   return (
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center">
-                        {other?.avatar ? (
-                          <img
-                            src={other.avatar}
-                            alt={other?.name}
-                            className="w-full h-full rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-primary-600 dark:text-primary-400 font-semibold">
-                            {other?.name?.charAt(0).toUpperCase()}
-                          </span>
-                        )}
+                      <div className="w-10 h-10 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center overflow-hidden">
+                        <img
+                          src={getAvatarUrl(other?.avatar)}
+                          alt={other?.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       <div>
                         <p className="font-semibold">{other?.name}</p>
@@ -394,18 +383,12 @@ const Messages = () => {
                         className={`flex items-start gap-2 ${isOwn ? 'justify-end' : 'justify-start'} group`}
                       >
                         {!isOwn && (
-                          <div className="w-8 h-8 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center flex-shrink-0">
-                            {message.sender.avatar ? (
-                              <img
-                                src={message.sender.avatar}
-                                alt={message.sender.name}
-                                className="w-full h-full rounded-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-primary-600 dark:text-primary-400 text-xs font-semibold">
-                                {message.sender.name?.charAt(0).toUpperCase()}
-                              </span>
-                            )}
+                          <div className="w-8 h-8 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            <img
+                              src={getAvatarUrl(message.sender.avatar)}
+                              alt={message.sender.name}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                         )}
                         <div className="flex flex-col gap-1 max-w-xs lg:max-w-md">
@@ -446,18 +429,12 @@ const Messages = () => {
                           </div>
                         </div>
                         {isOwn && (
-                          <div className="w-8 h-8 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center flex-shrink-0">
-                            {user?.avatar ? (
-                              <img
-                                src={user.avatar}
-                                alt={user.name}
-                                className="w-full h-full rounded-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-primary-600 dark:text-primary-400 text-xs font-semibold">
-                                {user?.name?.charAt(0).toUpperCase()}
-                              </span>
-                            )}
+                          <div className="w-8 h-8 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            <img
+                              src={getAvatarUrl(user?.avatar)}
+                              alt={user?.name}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                         )}
                       </div>

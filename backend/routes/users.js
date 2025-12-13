@@ -23,7 +23,8 @@ router.put('/profile', auth, upload.single('avatar'), async (req, res) => {
     const updates = req.body;
     
     if (req.file) {
-      updates.avatar = `/uploads/${req.file.filename}`;
+      const { getFileUrl } = require('../utils/fileHelper');
+      updates.avatar = getFileUrl(req.file) || `/uploads/${req.file.filename}`;
     }
 
     // Don't allow updating sensitive fields

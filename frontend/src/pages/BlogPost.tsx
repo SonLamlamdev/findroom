@@ -4,6 +4,7 @@ import axios from '../config/axios';
 import { FiHeart, FiMessageCircle, FiEye } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
+import { getImageUrl, getAvatarUrl } from '../utils/imageHelper';
 
 interface BlogPost {
   _id: string;
@@ -111,15 +112,11 @@ const BlogPost = () => {
           
           <div className="flex items-center justify-between text-gray-600 dark:text-gray-400">
             <div className="flex items-center">
-              {post.author.avatar ? (
-                <img
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  className="w-10 h-10 rounded-full mr-3"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 mr-3"></div>
-              )}
+              <img
+                src={getAvatarUrl(post.author.avatar)}
+                alt={post.author.name}
+                className="w-10 h-10 rounded-full mr-3"
+              />
               <div>
                 <p className="font-medium text-gray-900 dark:text-white">{post.author.name}</p>
                 <p className="text-sm">{new Date(post.createdAt).toLocaleDateString('vi-VN')}</p>
@@ -150,7 +147,7 @@ const BlogPost = () => {
         {post.images && post.images.length > 0 && (
           <div className="mb-8">
             <img
-              src={post.images[0]}
+              src={getImageUrl(post.images[0])}
               alt={post.title}
               className="w-full rounded-xl"
             />
@@ -185,15 +182,11 @@ const BlogPost = () => {
           <div className="space-y-6">
             {post.comments.map((comment, index) => (
               <div key={index} className="flex gap-3">
-                {comment.user.avatar ? (
-                  <img
-                    src={comment.user.avatar}
-                    alt={comment.user.name}
-                    className="w-10 h-10 rounded-full"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600"></div>
-                )}
+                <img
+                  src={getAvatarUrl(comment.user.avatar)}
+                  alt={comment.user.name}
+                  className="w-10 h-10 rounded-full"
+                />
                 
                 <div className="flex-1">
                   <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">

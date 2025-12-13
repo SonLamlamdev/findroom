@@ -4,6 +4,7 @@ import axios from '../config/axios';
 import { FiHeart, FiUser, FiMessageCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
+import { getAvatarUrl } from '../utils/imageHelper';
 
 interface RoommateMatch {
   user: {
@@ -163,17 +164,11 @@ const RoommateFinder = () => {
               <div key={match.user.id} className="card overflow-hidden">
                 {/* Avatar */}
                 <div className="h-32 bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center relative">
-                  {match.user.avatar ? (
-                    <img
-                      src={match.user.avatar}
-                      alt={match.user.name}
-                      className="w-24 h-24 rounded-full border-4 border-white"
-                    />
-                  ) : (
-                    <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                      <FiUser size={40} className="text-gray-400" />
-                    </div>
-                  )}
+                  <img
+                    src={getAvatarUrl(match.user.avatar)}
+                    alt={match.user.name}
+                    className="w-24 h-24 rounded-full border-4 border-white object-cover"
+                  />
                   
                   {/* Compatibility Score */}
                   <div className={`absolute top-4 right-4 ${getScoreBgColor(match.compatibilityScore)} px-3 py-1 rounded-full`}>
@@ -285,13 +280,11 @@ const RoommateFinder = () => {
               <div className="space-y-6">
                 {/* Avatar & Basic Info */}
                 <div className="flex items-center gap-4">
-                  {selectedProfile.user.avatar ? (
-                    <img
-                      src={selectedProfile.user.avatar}
-                      alt={selectedProfile.user.name}
-                      className="w-24 h-24 rounded-full"
-                    />
-                  ) : (
+                  <img
+                    src={getAvatarUrl(selectedProfile.user.avatar)}
+                    alt={selectedProfile.user.name}
+                    className="w-24 h-24 rounded-full object-cover"
+                  />
                     <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                       <FiUser size={40} className="text-gray-400" />
                     </div>

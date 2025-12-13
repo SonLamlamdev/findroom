@@ -395,15 +395,11 @@ const ListingDetail = () => {
                   <div key={review._id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        {review.reviewer.avatar ? (
-                          <img
-                            src={review.reviewer.avatar}
-                            alt={review.reviewer.name}
-                            className="w-10 h-10 rounded-full"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600"></div>
-                        )}
+                        <img
+                          src={getAvatarUrl(review.reviewer.avatar)}
+                          alt={review.reviewer.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
                         <span className="font-medium">{review.reviewer.name}</span>
                       </div>
                       <div className="flex items-center text-yellow-500">

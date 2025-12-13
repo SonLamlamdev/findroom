@@ -162,19 +162,8 @@ router.post('/', auth, isLandlord, upload.array('media', 10), async (req, res) =
     }
     
     // Process uploaded files
-    const images = [];
-    const videos = [];
-    
-    if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        const filePath = `/uploads/${file.filename}`;
-        if (file.mimetype.startsWith('image')) {
-          images.push(filePath);
-        } else if (file.mimetype.startsWith('video')) {
-          videos.push(filePath);
-        }
-      });
-    }
+    const { separateMedia } = require('../utils/fileHelper');
+    const { images, videos } = separateMedia(req.files || []);
 
     // Validate that at least one image is uploaded
     if (images.length === 0 && videos.length === 0) {
@@ -249,17 +238,8 @@ router.put('/:id', auth, isLandlord, upload.array('media', 10), async (req, res)
 
     // Process new uploaded files
     if (req.files && req.files.length > 0) {
-      const newImages = [];
-      const newVideos = [];
-      
-      req.files.forEach(file => {
-        const filePath = `/uploads/${file.filename}`;
-        if (file.mimetype.startsWith('image')) {
-          newImages.push(filePath);
-        } else if (file.mimetype.startsWith('video')) {
-          newVideos.push(filePath);
-        }
-      });
+      const { separateMedia } = require('../utils/fileHelper');
+      const { images: newImages, videos: newVideos } = separateMedia(req.files);
 
       if (newImages.length > 0) {
         updates.images = [...(listing.images || []), ...newImages];
