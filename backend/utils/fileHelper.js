@@ -50,28 +50,34 @@ const getFileUrls = (files) => {
  * @returns {Object} - Object with images and videos arrays
  */
 const separateMedia = (files) => {
-  if (!files || !Array.isArray(files)) {
-    return { images: [], videos: [] };
-  }
-  
   const images = [];
   const videos = [];
   
+  if (!files || !Array.isArray(files)) {
+    return { images, videos };
+  }
+  
   files.forEach(file => {
-    const url = getFileUrl(file);
-    if (!url) return;
+    if (!file) return;
     
-    if (file.mimetype && file.mimetype.startsWith('image')) {
-      images.push(url);
-    } else if (file.mimetype && file.mimetype.startsWith('video')) {
-      videos.push(url);
-    } else {
-      // Try to determine from URL or filename
-      if (url.includes('image') || /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(url)) {
+    try {
+      const url = getFileUrl(file);
+      if (!url) return;
+      
+      if (file.mimetype && file.mimetype.startsWith('image')) {
         images.push(url);
-      } else if (url.includes('video') || /\.(mp4|mov|avi|wmv|flv|webm|mkv|m4v)$/i.test(url)) {
+      } else if (file.mimetype && file.mimetype.startsWith('video')) {
         videos.push(url);
+      } else {
+        // Try to determine from URL or filename
+        if (url.includes('image') || /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(url)) {
+          images.push(url);
+        } else if (url.includes('video') || /\.(mp4|mov|avi|wmv|flv|webm|mkv|m4v)$/i.test(url)) {
+          videos.push(url);
+        }
       }
+    } catch (error) {
+      console.warn('Error processing file in separateMedia:', error);
     }
   });
   

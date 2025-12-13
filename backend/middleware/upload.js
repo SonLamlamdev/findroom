@@ -119,64 +119,88 @@ if (!useCloudinary) {
 
 // Helper function to upload files to Cloudinary in parallel
 module.exports.uploadToCloudinary = async (files, folder = 'findroom') => {
+  if (!files || !Array.isArray(files) || files.length === 0) {
+    return [];
+  }
+
   if (!module.exports.useCloudinary || !module.exports.cloudinary) {
     return files.map(file => ({
       ...file,
-      path: `/uploads/${file.filename}`,
-      url: `/uploads/${file.filename}`
+      path: file.filename ? `/uploads/${file.filename}` : null,
+      url: file.filename ? `/uploads/${file.filename}` : null
     }));
   }
 
   const cloudinary = module.exports.cloudinary;
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   
-  // Validate file sizes before upload
+  // Validate file sizes and buffers before upload
   const validFiles = files.filter(file => {
+    if (!file || !file.buffer) {
+      console.warn('File missing buffer:', file?.originalname || 'unknown');
+      return false;
+    }
     if (file.size > MAX_FILE_SIZE) {
-      console.warn(`File ${file.originalname} exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`);
+      console.warn(`File ${file.originalname || 'unknown'} exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`);
       return false;
     }
     return true;
   });
   
   if (validFiles.length === 0) {
-    throw new Error('All files exceed size limit');
+    return [];
   }
   
   // Upload files in parallel
   const uploadPromises = validFiles.map(file => {
-    const resourceType = file.mimetype.startsWith('video/') ? 'video' : 'image';
+    const resourceType = (file.mimetype && file.mimetype.startsWith('video/')) ? 'video' : 'image';
     
     return new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: folder,
-          resource_type: resourceType,
-          quality: 'auto:good',
-          fetch_format: 'auto',
-          timeout: 60000,
-          chunk_size: 6000000
-        },
-        (error, result) => {
-          if (error) {
-            console.error('Cloudinary upload error:', error);
-            reject(error);
-          } else {
-            resolve({
-              ...file,
-              path: result.secure_url,
-              url: result.secure_url,
-              public_id: result.public_id
-            });
+      try {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: folder,
+            resource_type: resourceType,
+            quality: 'auto:good',
+            fetch_format: 'auto',
+            timeout: 60000,
+            chunk_size: 6000000
+          },
+          (error, result) => {
+            if (error) {
+              console.error('Cloudinary upload error:', error);
+              reject(error);
+            } else if (result && result.secure_url) {
+              resolve({
+                ...file,
+                path: result.secure_url,
+                url: result.secure_url,
+                public_id: result.public_id
+              });
+            } else {
+              reject(new Error('Cloudinary upload returned invalid result'));
+            }
           }
+        );
+        
+        if (file.buffer) {
+          uploadStream.end(file.buffer);
+        } else {
+          reject(new Error('File buffer is missing'));
         }
-      );
-      
-      uploadStream.end(file.buffer);
+      } catch (streamError) {
+        console.error('Error creating upload stream:', streamError);
+        reject(streamError);
+      }
     });
   });
 
-  return Promise.all(uploadPromises);
+  try {
+    return await Promise.all(uploadPromises);
+  } catch (error) {
+    console.error('Error during parallel uploads:', error);
+    throw error;
+  }
 };
 
 // File filter - reject BMP and validate file size

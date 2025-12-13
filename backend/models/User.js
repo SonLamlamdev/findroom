@@ -131,7 +131,7 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 };
 
 // Indexes for better query performance
-userSchema.index({ email: 1 });
+// Note: email already has an index from unique: true, no need to add it again
 userSchema.index({ role: 1 });
 userSchema.index({ 'roommateProfile.lookingForRoommate': 1 });
 userSchema.index({ savedListings: 1 });

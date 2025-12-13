@@ -158,13 +158,25 @@ router.post('/', auth, isLandlord, upload.array('media', 10), async (req, res) =
     // Upload files to Cloudinary in parallel
     const upload = require('../middleware/upload');
     let processedFiles = [];
-    if (req.files && req.files.length > 0) {
-      processedFiles = await upload.uploadToCloudinary(req.files, 'findroom/listings');
+    const files = Array.isArray(req.files) ? req.files : (req.files ? [req.files] : []);
+    
+    if (files.length > 0) {
+      try {
+        processedFiles = await upload.uploadToCloudinary(files, 'findroom/listings');
+      } catch (uploadError) {
+        console.error('Error uploading files to Cloudinary:', uploadError);
+        if (!res.headersSent) {
+          return res.status(500).json({ error: 'Lỗi upload file. Vui lòng thử lại.' });
+        }
+        return;
+      }
     }
     
     // Process uploaded files
     const { separateMedia } = require('../utils/fileHelper');
-    const { images, videos } = separateMedia(processedFiles);
+    const mediaResult = separateMedia(processedFiles || []);
+    const images = Array.isArray(mediaResult.images) ? mediaResult.images : [];
+    const videos = Array.isArray(mediaResult.videos) ? mediaResult.videos : [];
 
     // Validate that at least one image is uploaded
     if (images.length === 0 && videos.length === 0) {
@@ -186,16 +198,18 @@ router.post('/', auth, isLandlord, upload.array('media', 10), async (req, res) =
     const listing = new Listing({
       ...listingData,
       landlord: req.userId,
-      images,
-      videos
+      images: images || [],
+      videos: videos || []
     });
 
     await listing.save();
 
-    res.status(201).json({
-      message: 'Listing created successfully',
-      listing
-    });
+    if (!res.headersSent) {
+      res.status(201).json({
+        message: 'Listing created successfully',
+        listing
+      });
+    }
   } catch (error) {
     console.error('Error creating listing:', error);
     
@@ -239,21 +253,33 @@ router.put('/:id', auth, isLandlord, upload.array('media', 10), async (req, res)
 
     // Upload new files to Cloudinary in parallel
     let processedFiles = [];
-    if (req.files && req.files.length > 0) {
-      const upload = require('../middleware/upload');
-      processedFiles = await upload.uploadToCloudinary(req.files, 'findroom/listings');
+    const files = Array.isArray(req.files) ? req.files : (req.files ? [req.files] : []);
+    
+    if (files.length > 0) {
+      try {
+        const upload = require('../middleware/upload');
+        processedFiles = await upload.uploadToCloudinary(files, 'findroom/listings');
+      } catch (uploadError) {
+        console.error('Error uploading files to Cloudinary:', uploadError);
+        if (!res.headersSent) {
+          return res.status(500).json({ error: 'Lỗi upload file. Vui lòng thử lại.' });
+        }
+        return;
+      }
     }
     
     // Process new uploaded files
     if (processedFiles.length > 0) {
       const { separateMedia } = require('../utils/fileHelper');
-      const { images: newImages, videos: newVideos } = separateMedia(processedFiles);
+      const mediaResult = separateMedia(processedFiles);
+      const newImages = Array.isArray(mediaResult.images) ? mediaResult.images : [];
+      const newVideos = Array.isArray(mediaResult.videos) ? mediaResult.videos : [];
 
       if (newImages.length > 0) {
-        updates.images = [...(listing.images || []), ...newImages];
+        updates.images = [...(Array.isArray(listing.images) ? listing.images : []), ...newImages];
       }
       if (newVideos.length > 0) {
-        updates.videos = [...(listing.videos || []), ...newVideos];
+        updates.videos = [...(Array.isArray(listing.videos) ? listing.videos : []), ...newVideos];
       }
     }
 
@@ -272,10 +298,12 @@ router.put('/:id', auth, isLandlord, upload.array('media', 10), async (req, res)
     Object.assign(listing, updates);
     await listing.save();
 
-    res.json({
-      message: 'Cập nhật bài đăng thành công',
-      listing
-    });
+    if (!res.headersSent) {
+      res.json({
+        message: 'Cập nhật bài đăng thành công',
+        listing
+      });
+    }
   } catch (error) {
     console.error('Error updating listing:', error);
     
