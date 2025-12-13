@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const Listing = require('../models/Listing');
 const { auth, isAdmin } = require('../middleware/auth');
@@ -118,11 +119,21 @@ router.get('/saved-listings', auth, async (req, res) => {
     const listings = [];
     for (const listingId of user.savedListings) {
       try {
+        // Validate ObjectId
+        if (!mongoose.Types.ObjectId.isValid(listingId)) {
+          console.warn(`Skipping invalid ObjectId in saved listings: ${listingId}`);
+          continue;
+        }
+        
         const listing = await Listing.findById(listingId)
           .populate('landlord', 'name avatar verifiedBadge')
           .lean();
         
-        if (listing) {
+        if (listing && listing.landlord) {
+          listings.push(listing);
+        } else if (listing) {
+          // Listing exists but landlord was deleted, include it anyway
+          listing.landlord = null;
           listings.push(listing);
         }
       } catch (listingError) {
@@ -189,11 +200,21 @@ router.get('/stayed-listings', auth, async (req, res) => {
     const listings = [];
     for (const listingId of user.stayedListings) {
       try {
+        // Validate ObjectId
+        if (!mongoose.Types.ObjectId.isValid(listingId)) {
+          console.warn(`Skipping invalid ObjectId in stayed listings: ${listingId}`);
+          continue;
+        }
+        
         const listing = await Listing.findById(listingId)
           .populate('landlord', 'name avatar verifiedBadge')
           .lean();
         
-        if (listing) {
+        if (listing && listing.landlord) {
+          listings.push(listing);
+        } else if (listing) {
+          // Listing exists but landlord was deleted, include it anyway
+          listing.landlord = null;
           listings.push(listing);
         }
       } catch (listingError) {
