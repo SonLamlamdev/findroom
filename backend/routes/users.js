@@ -6,22 +6,6 @@ const Listing = require('../models/Listing');
 const { auth, isAdmin } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
-// Get user profile
-router.get('/:id', async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select('-password');
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.json({ user });
-  } catch (error) {
-    console.error('❌ Error in route:', req.path, error.message);
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'Server error' });
-    }
-  }
-});
-
 // Update user profile
 router.put('/profile', auth, upload.single('avatar'), async (req, res) => {
   try {
@@ -297,6 +281,26 @@ router.post('/unban/:userId', auth, isAdmin, async (req, res) => {
     );
 
     res.json({ message: 'User unbanned successfully', user });
+  } catch (error) {
+    console.error('❌ Error in route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
+  }
+});
+
+// Get user profile (must be last to avoid capturing static routes)
+router.get('/:id', async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid user ID format' });
+    }
+    
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({ user });
   } catch (error) {
     console.error('❌ Error in route:', req.path, error.message);
     if (!res.headersSent) {
