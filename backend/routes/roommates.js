@@ -53,7 +53,10 @@ function calculateCompatibility(user1, user2) {
 // Find compatible roommates
 router.get('/find', auth, async (req, res) => {
   try {
-    const currentUser = await User.findById(req.userId);
+    const currentUser = await User.findById(req.userId)
+      .select('roommateProfile')
+      .lean()
+      .maxTimeMS(500);
     
     if (!currentUser.roommateProfile || !currentUser.roommateProfile.lookingForRoommate) {
       return res.status(400).json({ 
@@ -65,7 +68,11 @@ router.get('/find', auth, async (req, res) => {
     const potentialRoommates = await User.find({
       _id: { $ne: req.userId },
       'roommateProfile.lookingForRoommate': true
-    });
+    })
+      .select('name avatar roommateProfile')
+      .limit(100)
+      .lean()
+      .maxTimeMS(1000);
 
     // Calculate compatibility scores
     const matches = potentialRoommates.map(user => ({
@@ -73,11 +80,11 @@ router.get('/find', auth, async (req, res) => {
         id: user._id,
         name: user.name,
         avatar: user.avatar,
-        university: user.roommateProfile.university,
-        major: user.roommateProfile.major,
-        bio: user.roommateProfile.bio,
-        budget: user.roommateProfile.budget,
-        interests: user.roommateProfile.interests
+        university: user.roommateProfile?.university,
+        major: user.roommateProfile?.major,
+        bio: user.roommateProfile?.bio,
+        budget: user.roommateProfile?.budget,
+        interests: user.roommateProfile?.interests
       },
       compatibilityScore: calculateCompatibility(currentUser, user),
       matchReasons: []
@@ -108,7 +115,9 @@ router.get('/find', auth, async (req, res) => {
     res.json({ matches });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -116,7 +125,9 @@ router.get('/find', auth, async (req, res) => {
 router.get('/:userId', async (req, res) => {
   try {
     const user = await User.findById(req.params.userId)
-      .select('name avatar roommateProfile');
+      .select('name avatar roommateProfile')
+      .lean()
+      .maxTimeMS(500);
     
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -124,7 +135,9 @@ router.get('/:userId', async (req, res) => {
 
     res.json({ user });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -158,18 +171,29 @@ router.post('/save/:userId', auth, async (req, res) => {
 // Get saved roommates
 router.get('/saved/list', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).populate({
-      path: 'savedRoommates',
-      select: 'name avatar roommateProfile',
-      match: { 'roommateProfile.lookingForRoommate': true }
-    });
+    const user = await User.findById(req.userId)
+      .select('savedRoommates')
+      .lean()
+      .maxTimeMS(500);
     
-    const savedRoommates = user.savedRoommates.filter(rm => rm !== null);
+    if (!user || !user.savedRoommates || user.savedRoommates.length === 0) {
+      return res.json({ roommates: [] });
+    }
+
+    const roommates = await User.find({
+      _id: { $in: user.savedRoommates },
+      'roommateProfile.lookingForRoommate': true
+    })
+      .select('name avatar roommateProfile')
+      .lean()
+      .maxTimeMS(1000);
     
-    res.json({ roommates: savedRoommates });
+    res.json({ roommates: roommates || [] });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 

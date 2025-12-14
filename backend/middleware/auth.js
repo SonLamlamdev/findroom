@@ -9,7 +9,17 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ error: 'No authentication token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (jwtError) {
+      return res.status(401).json({ error: 'Invalid authentication token' });
+    }
+
+    if (!decoded || !decoded.userId) {
+      return res.status(401).json({ error: 'Invalid token payload' });
+    }
+
     const user = await User.findById(decoded.userId).select('-password');
     
     if (!user) {
@@ -24,22 +34,39 @@ const auth = async (req, res, next) => {
     req.userId = decoded.userId;
     next();
   } catch (error) {
-    res.status(401).json({ error: 'Invalid authentication token' });
+    console.error('❌ Auth middleware error:', error.message);
+    res.status(401).json({ error: 'Authentication failed' });
   }
 };
 
 const isLandlord = (req, res, next) => {
-  if (req.user.role !== 'landlord' && req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Access denied. Landlord role required.' });
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    if (req.user.role !== 'landlord' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied. Landlord role required.' });
+    }
+    next();
+  } catch (error) {
+    console.error('❌ isLandlord middleware error:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  next();
 };
 
 const isAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Access denied. Admin role required.' });
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied. Admin role required.' });
+    }
+    next();
+  } catch (error) {
+    console.error('❌ isAdmin middleware error:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  next();
 };
 
 module.exports = { auth, isLandlord, isAdmin };

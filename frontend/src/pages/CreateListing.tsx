@@ -134,7 +134,7 @@ const CreateListing = () => {
 
       const response = await axios.post('/api/listings', formDataToSend, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': undefined
         }
       });
 

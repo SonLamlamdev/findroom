@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { FiSun, FiMoon, FiMenu, FiX, FiUser, FiHeart, FiGrid, FiMessageCircle, FiShield } from 'react-icons/fi';
 import { useState } from 'react';
+import { getAvatarUrl } from '../utils/imageHelper';
 
 const Navbar = () => {
   const { t, i18n } = useTranslation();
@@ -88,13 +89,7 @@ const Navbar = () => {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
-                  {user.avatar ? (
-                    <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full" />
-                  ) : (
-                    <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-                      <FiUser className="text-white" />
-                    </div>
-                  )}
+                  <img src={getAvatarUrl(user.avatar)} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
                   <span className="hidden sm:block text-gray-900 dark:text-white">{user.name}</span>
                 </button>
 

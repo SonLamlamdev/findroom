@@ -60,6 +60,11 @@ const reviewSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Indexes for better query performance
+reviewSchema.index({ listing: 1, createdAt: -1 });
+reviewSchema.index({ reviewer: 1 });
+reviewSchema.index({ landlord: 1 });
+
 module.exports = mongoose.model('Review', reviewSchema);
 
 

@@ -45,18 +45,27 @@ router.get('/', async (req, res) => {
     else if (sort === 'newest') sortOption = '-createdAt';
     else if (sort === 'oldest') sortOption = 'createdAt';
 
-    const blogs = await Blog.find(query)
-      .populate('author', 'name avatar')
-      .sort(sortOption)
-      .limit(Number(limit))
-      .skip((Number(page) - 1) * Number(limit));
+    const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 50);
+    const safePage = Math.max(Number(page) || 1, 1);
+    const skip = (safePage - 1) * safeLimit;
+
+    const [blogs, total] = await Promise.all([
+      Blog.find(query)
+        .populate('author', '_id name avatar')
+        .sort(sortOption)
+        .limit(safeLimit)
+        .skip(skip)
+        .lean()
+        .maxTimeMS(1000),
+      Blog.countDocuments(query).maxTimeMS(500)
+    ]);
 
     // Calculate rating for each blog (based on likes/views ratio)
     const blogsWithRating = blogs.map(blog => {
-      const blogObj = blog.toObject();
+      const blogObj = { ...blog };
       // Simple rating: likes / (views + 1) * 5
       blogObj.rating = blog.views > 0 
-        ? (blog.likes.length / (blog.views + 1)) * 5 
+        ? ((blog.likes?.length || 0) / (blog.views + 1)) * 5 
         : 0;
       return blogObj;
     });
@@ -66,20 +75,20 @@ router.get('/', async (req, res) => {
       blogsWithRating.sort((a, b) => b.rating - a.rating);
     }
 
-    const total = await Blog.countDocuments(query);
-
     res.json({
       blogs: sort === 'rating' ? blogsWithRating : blogs,
       pagination: {
-        page: Number(page),
-        limit: Number(limit),
+        page: safePage,
+        limit: safeLimit,
         total,
-        pages: Math.ceil(total / Number(limit))
+        pages: Math.ceil(total / safeLimit)
       }
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -87,20 +96,25 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id)
-      .populate('author', 'name avatar')
-      .populate('comments.user', 'name avatar');
+      .populate('author', '_id name avatar')
+      .populate('comments.user', '_id name avatar')
+      .lean()
+      .maxTimeMS(1000);
     
     if (!blog) {
       return res.status(404).json({ error: 'Blog not found' });
     }
 
-    // Increment views
-    blog.views += 1;
-    await blog.save();
+    // Increment views (non-blocking)
+    Blog.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } })
+      .exec()
+      .catch(err => console.error('View increment error:', err.message));
 
     res.json({ blog });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -109,12 +123,15 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
   try {
     const blogData = req.body.data ? JSON.parse(req.body.data) : req.body;
     
-    const images = [];
-    if (req.files) {
-      req.files.forEach(file => {
-        images.push(`/uploads/${file.filename}`);
-      });
+    // Upload files to Cloudinary in parallel
+    const upload = require('../middleware/upload');
+    let processedFiles = [];
+    if (req.files && req.files.length > 0) {
+      processedFiles = await upload.uploadToCloudinary(req.files, 'findroom/blogs');
     }
+    
+    const { getFileUrls } = require('../utils/fileHelper');
+    const images = getFileUrls(processedFiles);
 
     const blog = new Blog({
       ...blogData,
@@ -130,7 +147,9 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 

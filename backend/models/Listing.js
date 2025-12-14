@@ -176,10 +176,18 @@ listingSchema.pre('save', async function(next) {
 
 // Indexes for better search performance
 listingSchema.index({ 'location.coordinates': '2dsphere' });
+listingSchema.index({ status: 1, createdAt: -1 });
+listingSchema.index({ status: 1, price: 1 });
+listingSchema.index({ status: 1, 'rating.average': -1 });
+listingSchema.index({ status: 1, views: -1 });
+listingSchema.index({ landlord: 1, createdAt: -1 });
 listingSchema.index({ price: 1 });
-listingSchema.index({ status: 1 });
-listingSchema.index({ title: 'text', description: 'text' });
+listingSchema.index({ 'roomDetails.roomType': 1 });
+listingSchema.index({ 'location.district': 1 });
+listingSchema.index({ 'location.city': 1 });
 listingSchema.index({ amenities: 1 });
+listingSchema.index({ title: 'text', description: 'text' });
+listingSchema.index({ createdAt: -1 });
 // Note: customId already has an index from unique: true, no need to add it again
 
 module.exports = mongoose.model('Listing', listingSchema);

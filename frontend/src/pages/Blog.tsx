@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from '../config/axios';
 import { FiHeart, FiMessageCircle, FiEye, FiPlus } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
+import { getImageUrl, getAvatarUrl } from '../utils/imageHelper';
 
 interface BlogPost {
   _id: string;
@@ -206,7 +207,7 @@ const Blog = () => {
               {post.images && post.images[0] && (
                 <div className="h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
                   <img
-                    src={post.images[0]}
+                    src={getImageUrl(post.images[0])}
                     alt={post.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />
@@ -246,15 +247,11 @@ const Blog = () => {
                 {/* Author & Stats */}
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center">
-                    {post.author.avatar ? (
-                      <img
-                        src={post.author.avatar}
-                        alt={post.author.name}
-                        className="w-6 h-6 rounded-full mr-2"
-                      />
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 mr-2"></div>
-                    )}
+                    <img
+                      src={getAvatarUrl(post.author.avatar)}
+                      alt={post.author.name}
+                      className="w-6 h-6 rounded-full mr-2"
+                    />
                     <span className="text-gray-700 dark:text-gray-300">{post.author.name}</span>
                   </div>
 

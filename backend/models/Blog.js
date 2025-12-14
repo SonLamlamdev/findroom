@@ -71,6 +71,11 @@ blogSchema.pre('save', async function(next) {
 });
 
 // Indexes for better search
+blogSchema.index({ published: 1, createdAt: -1 });
+blogSchema.index({ published: 1, 'likes': -1 });
+blogSchema.index({ published: 1, views: -1 });
+blogSchema.index({ author: 1, createdAt: -1 });
+blogSchema.index({ category: 1, createdAt: -1 });
 blogSchema.index({ tags: 1 });
 blogSchema.index({ title: 'text', content: 'text' });
 // Note: customId already has an index from unique: true, no need to add it again

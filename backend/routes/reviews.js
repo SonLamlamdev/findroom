@@ -9,12 +9,18 @@ const upload = require('../middleware/upload');
 router.get('/listing/:listingId', async (req, res) => {
   try {
     const reviews = await Review.find({ listing: req.params.listingId })
-      .populate('reviewer', 'name avatar')
-      .sort('-createdAt');
+      .select('-helpfulBy')
+      .populate('reviewer', '_id name avatar')
+      .sort('-createdAt')
+      .limit(100)
+      .lean()
+      .maxTimeMS(1000);
 
     res.json({ reviews });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -51,13 +57,16 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
       return res.status(400).json({ error: 'Vui lòng cung cấp ngày bạn đã ở phòng' });
     }
 
-    // Process uploaded images
-    const images = [];
-    if (req.files) {
-      req.files.forEach(file => {
-        images.push(`/uploads/${file.filename}`);
-      });
+    // Upload files to Cloudinary in parallel
+    const upload = require('../middleware/upload');
+    let processedFiles = [];
+    if (req.files && req.files.length > 0) {
+      processedFiles = await upload.uploadToCloudinary(req.files, 'findroom/reviews');
     }
+    
+    // Process uploaded images
+    const { getFileUrls } = require('../utils/fileHelper');
+    const images = getFileUrls(processedFiles);
 
     const review = new Review({
       ...reviewData,
@@ -68,19 +77,18 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
 
     await review.save();
 
-    // Update listing rating
-    const listing = await Listing.findById(reviewData.listing);
-    if (listing) {
-      const allReviews = await Review.find({ listing: listing._id });
-      const avgRating = allReviews.reduce((sum, r) => sum + r.rating.overall, 0) / allReviews.length;
-      
-      listing.rating = {
-        average: avgRating,
-        count: allReviews.length
-      };
-      
-      await listing.save();
-    }
+    // Update listing rating (async aggregation)
+    Review.aggregate([
+      { $match: { listing: reviewData.listing } },
+      { $group: { _id: null, avg: { $avg: '$rating.overall' }, count: { $sum: 1 } } }
+    ]).then(results => {
+      if (results.length > 0) {
+        const { avg, count } = results[0];
+        Listing.findByIdAndUpdate(reviewData.listing, {
+          rating: { average: Math.round(avg * 10) / 10, count }
+        }).exec().catch(err => console.error('Rating update error:', err.message));
+      }
+    }).catch(err => console.error('Rating aggregation error:', err.message));
 
     res.status(201).json({
       message: 'Review created successfully',
@@ -88,7 +96,9 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 

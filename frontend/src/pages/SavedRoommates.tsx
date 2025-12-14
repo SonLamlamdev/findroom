@@ -4,6 +4,7 @@ import axios from '../config/axios';
 import { FiHeart, FiUser, FiMessageCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
+import { getAvatarUrl } from '../utils/imageHelper';
 
 interface SavedRoommate {
   _id: string;
@@ -112,17 +113,11 @@ const SavedRoommates = () => {
               <div key={roommate._id} className="card overflow-hidden">
                 {/* Avatar */}
                 <div className="h-32 bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center relative">
-                  {roommate.avatar ? (
-                    <img
-                      src={roommate.avatar}
-                      alt={roommate.name}
-                      className="w-24 h-24 rounded-full border-4 border-white"
-                    />
-                  ) : (
-                    <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                      <FiUser size={40} className="text-gray-400" />
-                    </div>
-                  )}
+                  <img
+                    src={getAvatarUrl(roommate.avatar)}
+                    alt={roommate.name}
+                    className="w-24 h-24 rounded-full border-4 border-white object-cover"
+                  />
                 </div>
 
                 {/* Content */}
@@ -216,11 +211,11 @@ const SavedRoommates = () => {
                 {/* Avatar & Basic Info */}
                 <div className="flex items-center gap-4">
                   {selectedProfile.avatar ? (
-                    <img
-                      src={selectedProfile.avatar}
-                      alt={selectedProfile.name}
-                      className="w-24 h-24 rounded-full"
-                    />
+                  <img
+                    src={getAvatarUrl(selectedProfile.avatar)}
+                    alt={selectedProfile.name}
+                    className="w-24 h-24 rounded-full object-cover"
+                  />
                   ) : (
                     <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                       <FiUser size={40} className="text-gray-400" />

@@ -28,18 +28,27 @@ router.get('/users', async (req, res) => {
       ];
     }
 
-    const users = await User.find(query)
-      .select('-password')
-      .sort('-createdAt')
-      .limit(parseInt(limit))
-      .skip((parseInt(page) - 1) * parseInt(limit));
+    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
+    const safePage = Math.max(Number(page) || 1, 1);
+    const skip = (safePage - 1) * safeLimit;
 
-    const total = await User.countDocuments(query);
+    const [users, total] = await Promise.all([
+      User.find(query)
+        .select('-password')
+        .sort('-createdAt')
+        .limit(safeLimit)
+        .skip(skip)
+        .lean()
+        .maxTimeMS(1000),
+      User.countDocuments(query).maxTimeMS(500)
+    ]);
 
-    res.json({ users, total, page: parseInt(page), limit: parseInt(limit) });
+    res.json({ users, total, page: safePage, limit: safeLimit });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
@@ -178,18 +187,27 @@ router.get('/blogs', async (req, res) => {
       ];
     }
 
-    const blogs = await Blog.find(query)
-      .populate('author', 'name email')
-      .sort('-createdAt')
-      .limit(parseInt(limit))
-      .skip((parseInt(page) - 1) * parseInt(limit));
+    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
+    const safePage = Math.max(Number(page) || 1, 1);
+    const skip = (safePage - 1) * safeLimit;
 
-    const total = await Blog.countDocuments(query);
+    const [blogs, total] = await Promise.all([
+      Blog.find(query)
+        .populate('author', '_id name email')
+        .sort('-createdAt')
+        .limit(safeLimit)
+        .skip(skip)
+        .lean()
+        .maxTimeMS(1000),
+      Blog.countDocuments(query).maxTimeMS(500)
+    ]);
 
-    res.json({ blogs, total, page: parseInt(page), limit: parseInt(limit) });
+    res.json({ blogs, total, page: safePage, limit: safeLimit });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 

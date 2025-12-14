@@ -9,22 +9,22 @@
     "fix-index": "node scripts/fixConversationIndex.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "mongoose": "^8.0.0",
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
+    "cloudinary": "^2.8.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "multer": "^1.4.5-lts.1",
-    "socket.io": "^4.6.0",
-    "express-validator": "^7.0.1",
-    "helmet": "^7.1.0",
+    "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
-    "h3-js": "^4.1.0"
+    "express-validator": "^7.0.1",
+    "h3-js": "^4.1.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.0.0",
+    "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "^2.2.1",
+    "socket.io": "^4.6.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
   }
 }
-
-
