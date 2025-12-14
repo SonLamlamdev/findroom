@@ -54,7 +54,7 @@ const Footer = () => {
             <ul className="space-y-3 text-sm">
               <li className="flex items-center">
                 <FiMapPin className="mr-2" />
-                Hà Nội, Việt Nam
+                227 Nguyễn Văn Cừ, Phường Chợ Quán, Quận 5, TP.HCM
               </li>
               <li className="flex items-center">
                 <FiPhone className="mr-2" />
