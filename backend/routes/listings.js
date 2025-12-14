@@ -1,39 +1,26 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const Listing = require('../models/Listing');
 const { auth, isLandlord } = require('../middleware/auth');
 const uploadMiddleware = require('../middleware/upload');
 const { separateMedia } = require('../utils/fileHelper');
 
-/* =====================================================
-   GET: Landlord listings (PHẢI ĐỂ TRƯỚC /:id)
-===================================================== */
-router.get('/landlord/:landlordId', async (req, res) => {
-  try {
-    const listings = await Listing.find({
-      landlord: req.params.landlordId
-    })
-      .select('_id title price customId location roomDetails images rating views createdAt status')
-      .sort('-createdAt')
-      .limit(100)
-      .lean()
-      .maxTimeMS(500);
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
-    const transformed = (listings || []).map(l => ({
-      ...l,
-      images: l.images?.[0] ? [l.images[0]] : []
-    }));
+if (!uploadMiddleware || typeof uploadMiddleware.array !== 'function') {
+  console.error('Upload middleware missing or invalid: array method not found');
+}
+if (!uploadMiddleware.uploadToCloudinary || typeof uploadMiddleware.uploadToCloudinary !== 'function') {
+  console.warn('⚠️ uploadToCloudinary method not found on upload middleware');
+}
 
-    res.json({ listings: transformed });
-  } catch (err) {
-    console.error('❌ landlord listings error:', err.message);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
+const uploadArray = uploadMiddleware.array.bind(uploadMiddleware);
+const uploadToCloudinary = uploadMiddleware.uploadToCloudinary || (() => Promise.resolve([]));
 
-/* =====================================================
-   GET: All listings (OPTIMIZED – NO TIMEOUT)
-===================================================== */
+// Get all listings with filters
 router.get('/', async (req, res) => {
   try {
     const {
@@ -43,213 +30,433 @@ router.get('/', async (req, res) => {
       roomType,
       city,
       district,
+      university,
+      amenities,
       status = 'available',
       sort = '-createdAt',
       page = 1,
       limit = 20
     } = req.query;
 
-    const safeLimit = Math.min(Math.max(+limit || 20, 1), 50);
-    const safePage = Math.max(+page || 1, 1);
+    const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 50);
+    const safePage = Math.max(Number(page) || 1, 1);
     const skip = (safePage - 1) * safeLimit;
 
     const query = { status };
 
-    if (search && search.length >= 3) {
-      query.title = { $regex: search, $options: 'i' };
+    if (search && search.trim()) {
+      const searchTerm = escapeRegex(search.trim()).substring(0, 100);
+      if (searchTerm.length > 0) {
+        query.$or = [
+          { title: { $regex: `^${searchTerm}`, $options: 'i' } },
+          { 'location.district': { $regex: `^${searchTerm}`, $options: 'i' } }
+        ];
+      }
     }
 
     if (minPrice || maxPrice) {
       query.price = {};
-      if (minPrice) query.price.$gte = +minPrice;
-      if (maxPrice) query.price.$lte = +maxPrice;
+      if (minPrice) query.price.$gte = Number(minPrice);
+      if (maxPrice) query.price.$lte = Number(maxPrice);
     }
 
-    if (roomType) query['roomDetails.roomType'] = roomType;
-    if (city) query['location.city'] = { $regex: city, $options: 'i' };
-    if (district) query['location.district'] = { $regex: district, $options: 'i' };
+    if (roomType) {
+      query['roomDetails.roomType'] = roomType;
+    }
 
-    const listings = await Listing.find(query)
-      .select('_id title price customId location roomDetails images rating views createdAt')
-      .sort(sort)
+    if (city && city.trim()) {
+      const cityTerm = escapeRegex(city.trim()).substring(0, 100);
+      if (cityTerm.length > 0) {
+        query['location.city'] = { $regex: `^${cityTerm}`, $options: 'i' };
+      }
+    }
+    
+    if (district && district.trim()) {
+      const districtTerm = escapeRegex(district.trim()).substring(0, 100);
+      if (districtTerm.length > 0) {
+        query['location.district'] = { $regex: `^${districtTerm}`, $options: 'i' };
+      }
+    }
+
+    if (amenities) {
+      const amenitiesArray = Array.isArray(amenities) ? amenities : amenities.split(',');
+      if (amenitiesArray.length > 0) {
+        query.amenities = { $all: amenitiesArray };
+      }
+    }
+
+    if (university && university.trim()) {
+      const universityTerm = escapeRegex(university.trim()).substring(0, 100);
+      if (universityTerm.length > 0) {
+        query['location.nearbyUniversities.name'] = { $regex: `^${universityTerm}`, $options: 'i' };
+      }
+    }
+
+    let sortOption = '-createdAt';
+    if (sort === 'price') sortOption = 'price';
+    else if (sort === '-price') sortOption = '-price';
+    else if (sort === 'rating') sortOption = '-rating.average';
+    else if (sort === 'views') sortOption = '-views';
+    else if (sort === 'newest') sortOption = '-createdAt';
+    else if (sort === 'oldest') sortOption = 'createdAt';
+
+    const listingsPromise = Listing.find(query)
+      .select('_id title price customId location roomDetails.area roomDetails.roomType images landlord rating views createdAt')
+      .populate('landlord', '_id name verifiedBadge')
+      .sort(sortOption)
       .limit(safeLimit)
       .skip(skip)
       .lean()
-      .maxTimeMS(500);
+      .maxTimeMS(1500);
 
-    const transformed = (listings || []).map(l => ({
-      ...l,
-      images: l.images?.[0] ? [l.images[0]] : []
-    }));
+    const countPromise = Listing.countDocuments(query).maxTimeMS(800);
 
-    res.json({
-      listings: transformed,
-      pagination: {
-        page: safePage,
-        limit: safeLimit,
-        total: null, // ❌ KHÔNG count → tránh timeout
-        pages: null
-      }
-    });
-  } catch (err) {
-    console.error('❌ get listings error:', err.message);
-    res.status(500).json({ error: 'Server error' });
+    const [listings, total] = await Promise.all([listingsPromise, countPromise]);
+
+    if (!res.headersSent) {
+      res.json({
+        listings: listings || [],
+        pagination: {
+          page: safePage,
+          limit: safeLimit,
+          total: total || 0,
+          pages: Math.ceil((total || 0) / safeLimit)
+        }
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error fetching listings:', error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
-/* =====================================================
-   GET: Single listing
-===================================================== */
+// Get landlord's listings
+router.get('/landlord/:landlordId', async (req, res) => {
+  try {
+    const listings = await Listing.find({ 
+      landlord: req.params.landlordId 
+    })
+      .select('_id title price customId location roomDetails.area roomDetails.roomType images landlord rating views createdAt status')
+      .populate('landlord', '_id name verifiedBadge')
+      .sort('-createdAt')
+      .limit(100)
+      .lean()
+      .maxTimeMS(1500);
+
+    if (!res.headersSent) {
+      res.json({ listings: listings || [] });
+    }
+  } catch (error) {
+    console.error('❌ Error in listings route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
+  }
+});
+
+// Get single listing
 router.get('/:id', async (req, res) => {
   try {
-    const listing = await Listing.findById(req.params.id)
-      .populate('landlord', '_id name phone avatar verifiedBadge')
-      .lean()
-      .maxTimeMS(800);
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
 
+    const listing = await Listing.findById(req.params.id)
+      .populate('landlord', '_id name email phone avatar verifiedBadge')
+      .lean()
+      .maxTimeMS(2000);
+    
+    if (!listing) {
+      if (!res.headersSent) {
+        return res.status(404).json({ error: 'Listing not found' });
+      }
+      return;
+    }
+
+    Listing.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } })
+      .exec()
+      .catch(err => console.error('View increment error:', err.message));
+
+    if (!res.headersSent) {
+      res.json({ listing });
+    }
+  } catch (error) {
+    console.error('❌ Error in listings route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
+  }
+});
+
+// Create listing (Landlord only)
+router.post('/', auth, isLandlord, uploadArray('media', 10), async (req, res) => {
+  try {
+    if (!req.body.data) {
+      return res.status(400).json({ error: 'Thiếu dữ liệu bài đăng. Vui lòng kiểm tra lại form.' });
+    }
+
+    let listingData;
+    try {
+      listingData = JSON.parse(req.body.data);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      return res.status(400).json({ error: 'Dữ liệu không hợp lệ. Vui lòng thử lại.' });
+    }
+
+    if (!listingData.title || !listingData.description || !listingData.price) {
+      return res.status(400).json({ error: 'Vui lòng điền đầy đủ thông tin: tiêu đề, mô tả và giá thuê.' });
+    }
+
+    if (!listingData.location || !listingData.location.address || !listingData.location.coordinates) {
+      return res.status(400).json({ error: 'Vui lòng chọn vị trí trên bản đồ.' });
+    }
+
+    if (!listingData.roomDetails || !listingData.roomDetails.area) {
+      return res.status(400).json({ error: 'Vui lòng nhập diện tích phòng.' });
+    }
+    
+    let processedFiles = [];
+    const files = Array.isArray(req.files) ? req.files : (req.files ? [req.files] : []);
+    
+    if (files.length > 0) {
+      try {
+        processedFiles = await uploadToCloudinary(files, 'findroom/listings');
+      } catch (uploadError) {
+        console.error('Error uploading files to Cloudinary:', uploadError);
+        return res.status(500).json({ error: 'Lỗi upload file. Vui lòng thử lại.' });
+      }
+    }
+    
+    const mediaResult = separateMedia(processedFiles || []);
+    const images = Array.isArray(mediaResult.images) ? mediaResult.images : [];
+    const videos = Array.isArray(mediaResult.videos) ? mediaResult.videos : [];
+
+    if (images.length === 0 && videos.length === 0) {
+      return res.status(400).json({ error: 'Vui lòng thêm ít nhất 1 ảnh hoặc video.' });
+    }
+
+    if (listingData.location?.coordinates) {
+      const coords = listingData.location.coordinates;
+      if (coords.lat !== undefined && coords.lng !== undefined && !coords.type) {
+        listingData.location.coordinates = {
+          type: 'Point',
+          coordinates: [coords.lng, coords.lat]
+        };
+      }
+    }
+
+    const listing = new Listing({
+      ...listingData,
+      landlord: req.userId,
+      images: images,
+      videos: videos
+    });
+
+    await listing.save();
+
+    res.status(201).json({
+      message: 'Listing created successfully',
+      listing
+    });
+  } catch (error) {
+    console.error('Error creating listing:', error);
+    
+    if (!res.headersSent) {
+      if (error.name === 'ValidationError') {
+        const errors = Object.values(error.errors).map(err => err.message);
+        return res.status(400).json({ error: errors.join(', ') });
+      }
+      res.status(500).json({ 
+        error: error.message || 'Lỗi server. Vui lòng thử lại sau.' 
+      });
+    }
+  }
+});
+
+// Update listing
+router.put('/:id', auth, isLandlord, uploadArray('media', 10), async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
+
+    const listing = await Listing.findById(req.params.id);
+    
+    if (!listing) {
+      return res.status(404).json({ error: 'Không tìm thấy bài đăng' });
+    }
+
+    if (listing.landlord.toString() !== req.userId) {
+      return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa bài đăng này' });
+    }
+
+    let updates;
+    if (req.body.data) {
+      try {
+        updates = JSON.parse(req.body.data);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        return res.status(400).json({ error: 'Dữ liệu không hợp lệ. Vui lòng thử lại.' });
+      }
+    } else {
+      updates = req.body;
+    }
+
+    let processedFiles = [];
+    const files = Array.isArray(req.files) ? req.files : (req.files ? [req.files] : []);
+    
+    if (files.length > 0) {
+      try {
+        processedFiles = await uploadToCloudinary(files, 'findroom/listings');
+      } catch (uploadError) {
+        console.error('Error uploading files to Cloudinary:', uploadError);
+        return res.status(500).json({ error: 'Lỗi upload file. Vui lòng thử lại.' });
+      }
+    }
+    
+    if (processedFiles.length > 0) {
+      const mediaResult = separateMedia(processedFiles);
+      const newImages = Array.isArray(mediaResult.images) ? mediaResult.images : [];
+      const newVideos = Array.isArray(mediaResult.videos) ? mediaResult.videos : [];
+
+      const existingImages = Array.isArray(listing.images) ? listing.images : [];
+      const existingVideos = Array.isArray(listing.videos) ? listing.videos : [];
+
+      if (newImages.length > 0) {
+        updates.images = [...existingImages, ...newImages];
+      }
+      if (newVideos.length > 0) {
+        updates.videos = [...existingVideos, ...newVideos];
+      }
+    }
+
+    if (updates.location?.coordinates) {
+      const coords = updates.location.coordinates;
+      if (coords.lat !== undefined && coords.lng !== undefined && !coords.type) {
+        updates.location.coordinates = {
+          type: 'Point',
+          coordinates: [coords.lng, coords.lat]
+        };
+      }
+    }
+
+    Object.assign(listing, updates);
+    await listing.save();
+
+    res.json({
+      message: 'Cập nhật bài đăng thành công',
+      listing
+    });
+  } catch (error) {
+    console.error('Error updating listing:', error);
+    
+    if (!res.headersSent) {
+      if (error.name === 'ValidationError') {
+        const errors = Object.values(error.errors).map(err => err.message);
+        return res.status(400).json({ error: errors.join(', ') });
+      }
+      res.status(500).json({ 
+        error: error.message || 'Lỗi server. Vui lòng thử lại sau.' 
+      });
+    }
+  }
+});
+
+// Delete listing
+router.delete('/:id', auth, isLandlord, async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
+
+    const listing = await Listing.findById(req.params.id);
+    
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' });
     }
 
-    // tăng view không block
-    Listing.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } }).catch(() => {});
-
-    res.json({ listing });
-  } catch (err) {
-    console.error('❌ get listing error:', err.message);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-/* =====================================================
-   POST: Create listing
-===================================================== */
-router.post(
-  '/',
-  auth,
-  isLandlord,
-  uploadMiddleware.array('media', 10),
-  async (req, res) => {
-    try {
-      if (!req.body.data) {
-        return res.status(400).json({ error: 'Thiếu dữ liệu bài đăng' });
-      }
-
-      const data = JSON.parse(req.body.data);
-
-      if (!data.title || !data.description || !data.price) {
-        return res.status(400).json({ error: 'Thiếu thông tin bắt buộc' });
-      }
-
-      let uploaded = [];
-      if (req.files?.length) {
-        uploaded = await uploadMiddleware.uploadToCloudinary(
-          req.files,
-          'findroom/listings'
-        );
-      }
-
-      const media = separateMedia(uploaded);
-      if (!media.images?.length && !media.videos?.length) {
-        return res.status(400).json({ error: 'Cần ít nhất 1 ảnh hoặc video' });
-      }
-
-      if (data.location?.coordinates?.lat != null) {
-        data.location.coordinates = {
-          type: 'Point',
-          coordinates: [
-            data.location.coordinates.lng,
-            data.location.coordinates.lat
-          ]
-        };
-      }
-
-      const listing = await Listing.create({
-        ...data,
-        landlord: req.userId,
-        images: media.images || [],
-        videos: media.videos || []
-      });
-
-      res.status(201).json({ message: 'Created', listing });
-    } catch (err) {
-      console.error('❌ create listing error:', err.message);
-      res.status(500).json({ error: 'Server error' });
-    }
-  }
-);
-
-/* =====================================================
-   PUT: Update listing
-===================================================== */
-router.put(
-  '/:id',
-  auth,
-  isLandlord,
-  uploadMiddleware.array('media', 10),
-  async (req, res) => {
-    try {
-      const listing = await Listing.findById(req.params.id);
-      if (!listing) return res.status(404).json({ error: 'Not found' });
-      if (listing.landlord.toString() !== req.userId) {
-        return res.status(403).json({ error: 'Forbidden' });
-      }
-
-      const updates = req.body.data ? JSON.parse(req.body.data) : req.body;
-
-      if (req.files?.length) {
-        const uploaded = await uploadMiddleware.uploadToCloudinary(
-          req.files,
-          'findroom/listings'
-        );
-        const media = separateMedia(uploaded);
-
-        updates.images = [...(listing.images || []), ...(media.images || [])];
-        updates.videos = [...(listing.videos || []), ...(media.videos || [])];
-      }
-
-      if (updates.location?.coordinates?.lat != null) {
-        updates.location.coordinates = {
-          type: 'Point',
-          coordinates: [
-            updates.location.coordinates.lng,
-            updates.location.coordinates.lat
-          ]
-        };
-      }
-
-      Object.assign(listing, updates);
-      await listing.save();
-
-      res.json({ message: 'Updated', listing });
-    } catch (err) {
-      console.error('❌ update listing error:', err.message);
-      res.status(500).json({ error: 'Server error' });
-    }
-  }
-);
-
-/* =====================================================
-   DELETE
-===================================================== */
-router.delete('/:id', auth, isLandlord, async (req, res) => {
-  try {
-    const listing = await Listing.findById(req.params.id);
-    if (!listing) return res.status(404).json({ error: 'Not found' });
     if (listing.landlord.toString() !== req.userId) {
-      return res.status(403).json({ error: 'Forbidden' });
+      return res.status(403).json({ error: 'Not authorized' });
     }
 
     await listing.deleteOne();
-    res.json({ message: 'Deleted' });
-  } catch (err) {
-    console.error('❌ delete listing error:', err.message);
-    res.status(500).json({ error: 'Server error' });
+
+    res.json({ message: 'Listing deleted successfully' });
+  } catch (error) {
+    console.error('❌ Error in listings route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
+  }
+});
+
+// Update listing status (hide/show)
+router.patch('/:id/status', auth, isLandlord, async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
+
+    const { status } = req.body;
+    const listing = await Listing.findById(req.params.id);
+    
+    if (!listing) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
+
+    if (listing.landlord.toString() !== req.userId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    listing.status = status;
+    await listing.save();
+
+    res.json({ message: 'Listing status updated', listing });
+  } catch (error) {
+    console.error('❌ Error in listings route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
+  }
+});
+
+// Track search keyword
+router.post('/:id/track-keyword', async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
+
+    const { keyword } = req.body;
+    if (!keyword || !keyword.trim()) {
+      return res.json({ message: 'Keyword tracked' });
+    }
+
+    const listing = await Listing.findById(req.params.id);
+    if (!listing) {
+      return res.json({ message: 'Keyword tracked' });
+    }
+
+    listing.searchKeywords = listing.searchKeywords || [];
+    const existingKeyword = listing.searchKeywords.find(k => k.keyword === keyword.trim());
+    
+    if (existingKeyword) {
+      existingKeyword.count += 1;
+    } else {
+      listing.searchKeywords.push({ keyword: keyword.trim(), count: 1 });
+    }
+    
+    await listing.save();
+
+    res.json({ message: 'Keyword tracked' });
+  } catch (error) {
+    console.error('❌ Error in listings route:', req.path, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 
 module.exports = router;
-
-
-
-
