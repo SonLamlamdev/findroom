@@ -49,10 +49,10 @@ const Navbar = () => {
             {user && (user.role === 'landlord' || user.role === 'admin') && (
               <>
                 <Link to="/create-listing" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
-                  Đăng bài
+                  {t('nav.post')}
                 </Link>
                 <Link to="/dashboard" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
-                  Thống kê
+                  {t('nav.stats')}
                 </Link>
               </>
             )}
@@ -114,7 +114,7 @@ const Navbar = () => {
                       className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      <FiMessageCircle className="inline mr-2" /> Tin nhắn
+                      <FiMessageCircle className="inline mr-2" /> {t('nav.messages')}
                     </Link>
                     {user.role === 'tenant' && (
                       <>
@@ -130,7 +130,7 @@ const Navbar = () => {
                           className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
                           onClick={() => setUserMenuOpen(false)}
                         >
-                          Phòng đã ở
+                          {t('nav.stayed')}
                         </Link>
                       </>
                     )}
@@ -140,7 +140,7 @@ const Navbar = () => {
                         className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
                         onClick={() => setUserMenuOpen(false)}
                       >
-                        <FiShield className="inline mr-2" /> Quản trị
+                        <FiShield className="inline mr-2" /> {t('nav.admin')}
                       </Link>
                     )}
                     {(user.role === 'landlord' || user.role === 'admin') && (
@@ -220,14 +220,14 @@ const Navbar = () => {
                   className="block py-2 text-gray-700 dark:text-gray-300"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Đăng bài
+                  {t('nav.post')}
                 </Link>
                 <Link
                   to="/dashboard"
                   className="block py-2 text-gray-700 dark:text-gray-300"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Thống kê
+                  {t('nav.stats')}
                 </Link>
               </>
             )}

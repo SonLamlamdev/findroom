@@ -97,7 +97,7 @@ const resources = {
         blog: 'Blog & Community',
         dashboard: 'Dashboard',
         stats: 'Statistics', // New
-        post: 'Post Listing', // New
+        post: 'Post', // New
         profile: 'Profile',
         saved: 'Saved Listings',
         savedRoommates: 'Saved Roommates', // New
