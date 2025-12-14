@@ -4,18 +4,19 @@ import { FiLock, FiEye, FiDatabase, FiShare2, FiTrash2 } from 'react-icons/fi';
 const Privacy = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-12">
+      {/* Hero Header - UPDATED to Blue Stripe */}
+      <div className="bg-primary-600 dark:bg-primary-900 text-white py-16">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl font-bold mb-4 text-gray-800 dark:text-white">Chính sách bảo mật</h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <h1 className="text-4xl font-bold mb-4">Chính sách bảo mật</h1>
+          <p className="text-primary-100 text-xl max-w-2xl mx-auto">
             Cam kết bảo vệ thông tin cá nhân của bạn
           </p>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 mt-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm max-w-4xl mx-auto p-8 border border-gray-200 dark:border-gray-700">
+      {/* Content Container - Added negative margin (-mt-8) for the floating card effect */}
+      <div className="container mx-auto px-4 -mt-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg max-w-4xl mx-auto p-8 border border-gray-200 dark:border-gray-700">
           
           <div className="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
             <p className="mb-8">
