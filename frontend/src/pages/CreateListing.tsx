@@ -56,7 +56,7 @@ const CreateListing = () => {
     const files = Array.from(e.target.files || []);
     
     if (selectedFiles.length + files.length > 10) {
-      toast.error('Tối đa 10 ảnh/video');
+      toast.error('Tối đa 10 ảnh');
       return;
     }
 
@@ -160,16 +160,16 @@ const CreateListing = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Upload Photos/Videos */}
+          {/* Upload Photos */}
           <div className="card p-6">
-            <h2 className="text-xl font-bold mb-4">📸 Ảnh & Video</h2>
+            <h2 className="text-xl font-bold mb-4">📸 Ảnh</h2>
             
             <div className="mb-4">
               <label className="block w-full">
                 <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-primary-500 transition-colors">
                   <FiUpload className="mx-auto text-gray-400 mb-2" size={40} />
                   <p className="text-gray-600 dark:text-gray-400 mb-1">
-                    Click để chọn ảnh/video
+                    Click để chọn ảnh
                   </p>
                   <p className="text-sm text-gray-500">
                     Tối đa 10 file, mỗi file không quá 10MB
