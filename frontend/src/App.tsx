@@ -27,6 +27,8 @@ const StayedListings = lazy(() => import('./pages/StayedListings'));
 const SavedRoommates = lazy(() => import('./pages/SavedRoommates'));
 const Messages = lazy(() => import('./pages/Messages'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const About = lazy(() => import('./pages/About'));
+
 
 // Loading component
 const LoadingSpinner = () => (
@@ -59,6 +61,11 @@ function App() {
                 <Route path="/dashboard" element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/about" element={
+                  <ProtectedRoute>
+                    <About />
                   </ProtectedRoute>
                 } />
                 <Route path="/create-listing" element={
