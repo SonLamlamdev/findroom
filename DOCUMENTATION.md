@@ -49,3 +49,9 @@ frontend/src/pages/ListingDetail.tsx
 Added onError event handler to <img> tags.
 
 If an image fails to load (404), it automatically swaps the source to a placeholder image (https://placehold.co...), preventing broken UI elements.
+
+4. Added support pages including:
+    - FAQ
+    - Privacy Policy
+    - Terms of use
+    - About us

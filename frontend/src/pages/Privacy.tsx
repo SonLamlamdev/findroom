@@ -32,7 +32,6 @@ const Privacy = () => {
               <p className="mb-2">Chúng tôi chỉ thu thập những thông tin cần thiết để vận hành dịch vụ:</p>
               <ul className="list-disc pl-5 space-y-2">
                 <li><strong>Thông tin định danh:</strong> Họ tên, địa chỉ email, số điện thoại, và ảnh đại diện (avatar).</li>
-                <li><strong>Thông tin xác thực (dành cho Chủ trọ):</strong> Ảnh CCCD/CMND (chỉ dùng để xác minh danh tính, không hiển thị công khai).</li>
                 <li><strong>Dữ liệu hoạt động:</strong> Lịch sử xem phòng, các phòng đã lưu, và lịch sử đánh giá.</li>
               </ul>
             </section>
@@ -44,9 +43,7 @@ const Privacy = () => {
                 2. Phạm vi sử dụng thông tin
               </h2>
               <ul className="list-disc pl-5 space-y-2">
-                <li><strong>Kết nối liên lạc:</strong> Số điện thoại của bạn chỉ hiển thị cho người dùng khác khi có nhu cầu thuê/cho thuê thực sự (ví dụ: khi bấm "Hiện số điện thoại").</li>
                 <li><strong>Xác thực tài khoản:</strong> Đảm bảo môi trường an toàn, loại bỏ các tài khoản ảo hoặc lừa đảo.</li>
-                <li><strong>Gửi thông báo:</strong> Email được dùng để gửi xác nhận đặt lịch xem phòng, quên mật khẩu, hoặc thông báo hệ thống quan trọng.</li>
               </ul>
             </section>
 
@@ -61,7 +58,7 @@ const Privacy = () => {
                 <ul className="list-disc pl-5 space-y-1 text-blue-700 dark:text-blue-300">
                   <li>KHÔNG bán dữ liệu cá nhân cho bên thứ ba.</li>
                   <li>KHÔNG chia sẻ thông tin cho các công ty quảng cáo/tiếp thị.</li>
-                  <li>KHÔNG công khai thông tin nhạy cảm (như CCCD) lên website.</li>
+                  <li>KHÔNG công khai thông tin nhạy cảm lên website.</li>
                 </ul>
               </div>
             </section>

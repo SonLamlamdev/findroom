@@ -57,7 +57,7 @@ const Terms = () => {
               </h2>
               <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-lg border border-red-100 dark:border-red-900/30">
                 <ul className="list-disc pl-5 space-y-2 text-red-700 dark:text-red-300">
-                  <li>Yêu cầu người thuê chuyển khoản tiền cọc giữ phòng khi chưa cho xem phòng (Hành vi lừa đảo).</li>
+                  <li>Những hành vi lừa đảo.</li>
                   <li>Sử dụng ngôn từ thiếu văn hóa, quấy rối hoặc đe dọa người dùng khác.</li>
                   <li>Đăng tải nội dung đồi trụy, chính trị hoặc vi phạm pháp luật Việt Nam.</li>
                   <li>Spam tin đăng hoặc tạo nhiều tài khoản ảo để thao túng đánh giá.</li>
