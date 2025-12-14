@@ -236,8 +236,9 @@ mongoose.connect(MONGODB_URI, {
   console.log('✅ Connected to MongoDB successfully');
   console.log(`📦 Database: ${MONGODB_URI}`);
   const PORT = process.env.PORT || 5000;
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server is running on port ${PORT}`);
+    console.log(`📡 Listening on 0.0.0.0:${PORT}`);
   });
 })
 .catch((error) => {
