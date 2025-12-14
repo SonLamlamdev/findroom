@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../utils/errorHandler';
-import { getImageUrl } from '../utils/imageHelper';
+import { getImageUrl, getAvatarUrl } from '../utils/imageHelper';
 
 interface Listing {
   _id: string;
@@ -70,6 +70,11 @@ const ListingDetail = () => {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [stayedAt, setStayedAt] = useState('');
+
+  // Fallback image function
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.src = 'https://placehold.co/600x400?text=Image+Not+Found';
+  };
 
   useEffect(() => {
     if (id) {
@@ -179,7 +184,7 @@ const ListingDetail = () => {
       setShowReviewForm(false);
       setReviewComment('');
       fetchReviews();
-      fetchListing(); // Refresh để cập nhật rating
+      fetchListing(); 
     } catch (error: any) {
       const errorMessage = getErrorMessage(error, 'Không thể đánh giá');
       toast.error(errorMessage);
@@ -213,12 +218,13 @@ const ListingDetail = () => {
     <div className="container mx-auto px-4 py-8">
       {/* Images */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-        <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden">
-          {listing.images[selectedImage] ? (
+        <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden relative">
+          {listing.images && listing.images.length > 0 ? (
             <img
               src={getImageUrl(listing.images[selectedImage])}
               alt={listing.title}
               className="w-full h-full object-cover"
+              onError={handleImageError}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
@@ -228,7 +234,7 @@ const ListingDetail = () => {
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          {listing.images.slice(0, 6).map((image, index) => (
+          {listing.images && listing.images.slice(0, 6).map((image, index) => (
             <div
               key={index}
               className={`h-32 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden cursor-pointer ${
@@ -236,7 +242,12 @@ const ListingDetail = () => {
               }`}
               onClick={() => setSelectedImage(index)}
             >
-              <img src={getImageUrl(image)} alt="" className="w-full h-full object-cover" />
+              <img 
+                src={getImageUrl(image)} 
+                alt="" 
+                className="w-full h-full object-cover"
+                onError={handleImageError}
+              />
             </div>
           ))}
         </div>
@@ -399,6 +410,7 @@ const ListingDetail = () => {
                           src={getAvatarUrl(review.reviewer.avatar)}
                           alt={review.reviewer.name}
                           className="w-10 h-10 rounded-full object-cover"
+                          onError={handleImageError}
                         />
                         <span className="font-medium">{review.reviewer.name}</span>
                       </div>
@@ -511,11 +523,3 @@ const ListingDetail = () => {
 };
 
 export default ListingDetail;
-
-
-
-
-
-
-
-
