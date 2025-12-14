@@ -2,96 +2,6 @@ const multer = require('multer');
 const path = require('path');
 
 // Check if Cloudinary is configured
-const useCloudinary = 
-  process.env.CLOUDINARY_CLOUD_NAME && 
-  process.env.CLOUDINARY_API_KEY && 
-  process.env.CLOUDINARY_API_SECRET;
-
-let storage;
-
-if (useCloudinary) {
-  // --- CLOUDINARY STORAGE ---
-  const cloudinary = require('cloudinary').v2;
-  const CloudinaryStorage = require('multer-storage-cloudinary');
-
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-  });
-
-  storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: async (req, file) => {
-      let folder = 'findroom/listings'; // Default folder
-      
-      // Basic folder logic
-      if (file.fieldname === 'avatar') {
-        folder = 'findroom/avatars';
-      } else if (req.baseUrl && req.baseUrl.includes('blog')) {
-        folder = 'findroom/blogs';
-      }
-      
-      return {
-        folder: folder,
-        allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov'],
-        resource_type: file.mimetype.startsWith('video/') ? 'video' : 'image',
-      };
-    }
-  });
-  console.log('✅ Upload Middleware: Using Cloudinary');
-} else {
-  // --- LOCAL DISK STORAGE ---
-  // This ensures 'file.path' is generated so the database has something to save
-  storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      const fs = require('fs');
-      const uploadDir = 'uploads/';
-      // Create folder if it doesn't exist
-      if (!fs.existsSync(uploadDir)){
-          fs.mkdirSync(uploadDir, { recursive: true });
-      }
-      cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, 'file-' + uniqueSuffix + path.extname(file.originalname));
-    }
-  });
-  console.log('⚠️ Upload Middleware: Using Local Disk Storage (uploads/ folder)');
-}
-
-// File Filter (Security)
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|mov|avi|mkv/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
-
-  if (extname && mimetype) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only images and videos are allowed!'));
-  }
-};
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: fileFilter
-});
-
-// Add the uploadToCloudinary method for backward compatibility if needed, 
-// though we primarily use req.files.path now.
-upload.uploadToCloudinary = async (files) => {
-  return files; // Pass through since storage engine handled it
-};
-
-module.exports = upload;
-
-/**const multer = require('multer');
-const path = require('path');
-
-// Check if Cloudinary is configured
 let useCloudinary = 
   process.env.CLOUDINARY_CLOUD_NAME && 
   process.env.CLOUDINARY_API_KEY && 
@@ -357,7 +267,7 @@ const upload = multer({
 });
 
 module.exports = upload;
-**/
+
 
 
 

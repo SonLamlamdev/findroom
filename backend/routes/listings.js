@@ -4,9 +4,8 @@ const router = express.Router();
 const Listing = require('../models/Listing');
 const { auth, isLandlord } = require('../middleware/auth');
 const uploadMiddleware = require('../middleware/upload');
-// We do not need separateMedia if we handle sorting inline, which is safer here
-// const { separateMedia } = require('../utils/fileHelper'); 
 
+// Regex helper for search
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -16,25 +15,31 @@ if (!uploadMiddleware || typeof uploadMiddleware.array !== 'function') {
   console.error('Upload middleware missing or invalid: array method not found');
 }
 
-// We use the middleware directly. 
-// Note: With CloudinaryStorage, files are uploaded BEFORE this route handler runs.
 const uploadArray = uploadMiddleware.array.bind(uploadMiddleware);
 
-// --- HELPER TO EXTRACT URLS FROM MULTER/CLOUDINARY FILES ---
-const getMediaFromFiles = (files) => {
+// --- HELPER TO EXTRACT URLS AFTER UPLOAD ---
+// This takes the result from uploadToCloudinary (which returns objects with .path or .url)
+const getMediaFromProcessedFiles = (files) => {
   const images = [];
   const videos = [];
   
   if (!files || !Array.isArray(files)) return { images, videos };
 
   files.forEach(file => {
-    // Cloudinary storage puts the secure URL in file.path (or file.url)
+    // We prefer .path, fallback to .url. 
+    // Your upload.js sets both, so this is safe.
     const url = file.path || file.url; 
     
-    if (file.mimetype.startsWith('image/')) {
-      images.push(url);
-    } else if (file.mimetype.startsWith('video/')) {
+    if (!url) return;
+
+    if (file.mimetype && file.mimetype.startsWith('video/')) {
       videos.push(url);
+    } else if (file.resource_type === 'video') { 
+      // Cloudinary specific check
+      videos.push(url);
+    } else {
+      // Default to image
+      images.push(url);
     }
   });
 
@@ -132,24 +137,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get landlord's listings
-router.get('/landlord/:landlordId', async (req, res) => {
-  try {
-    const listings = await Listing.find({ landlord: req.params.landlordId })
-      .select('_id title price customId location roomDetails.area roomDetails.roomType images landlord rating views createdAt status')
-      .populate('landlord', '_id name verifiedBadge')
-      .sort('-createdAt')
-      .limit(100)
-      .lean()
-      .maxTimeMS(1500);
-
-    if (!res.headersSent) res.json({ listings: listings || [] });
-  } catch (error) {
-    console.error('❌ Error in listings route:', req.path, error.message);
-    if (!res.headersSent) res.status(500).json({ error: 'Server error' });
-  }
-});
-
 // Get single listing
 router.get('/:id', async (req, res) => {
   try {
@@ -179,40 +166,42 @@ router.get('/:id', async (req, res) => {
 // Create listing (Landlord only)
 router.post('/', auth, isLandlord, uploadArray('media', 10), async (req, res) => {
   try {
-    if (!req.body.data) {
-      return res.status(400).json({ error: 'Thiếu dữ liệu bài đăng. Vui lòng kiểm tra lại form.' });
-    }
+    // 1. Parse JSON data
+    if (!req.body.data) return res.status(400).json({ error: 'Thiếu dữ liệu bài đăng.' });
 
     let listingData;
     try {
       listingData = JSON.parse(req.body.data);
     } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      return res.status(400).json({ error: 'Dữ liệu không hợp lệ. Vui lòng thử lại.' });
+      return res.status(400).json({ error: 'Dữ liệu JSON không hợp lệ.' });
     }
 
+    // 2. Validate basic fields
     if (!listingData.title || !listingData.description || !listingData.price) {
-      return res.status(400).json({ error: 'Vui lòng điền đầy đủ thông tin: tiêu đề, mô tả và giá thuê.' });
-    }
-
-    if (!listingData.location || !listingData.location.address || !listingData.location.coordinates) {
-      return res.status(400).json({ error: 'Vui lòng chọn vị trí trên bản đồ.' });
-    }
-
-    if (!listingData.roomDetails || !listingData.roomDetails.area) {
-      return res.status(400).json({ error: 'Vui lòng nhập diện tích phòng.' });
+      return res.status(400).json({ error: 'Vui lòng điền tiêu đề, mô tả và giá.' });
     }
     
-    // FIX APPLIED HERE: Direct access to req.files
-    // Multer + Cloudinary middleware has ALREADY uploaded the files. 
-    // req.files contains the Cloudinary metadata (including paths).
-    const files = req.files || [];
-    const { images, videos } = getMediaFromFiles(files);
+    // 3. HANDLE UPLOAD (Crucial Step)
+    let processedFiles = [];
+    if (req.files && req.files.length > 0) {
+      try {
+        // We MUST call this because your upload.js uses memory storage.
+        // This converts the buffers into actual file paths (Cloudinary or Local).
+        processedFiles = await uploadMiddleware.uploadToCloudinary(req.files, 'findroom/listings');
+      } catch (uploadError) {
+        console.error('Error uploading files:', uploadError);
+        return res.status(500).json({ error: 'Lỗi upload file. Vui lòng thử lại.' });
+      }
+    }
+
+    // 4. Sort URLs into images and videos
+    const { images, videos } = getMediaFromProcessedFiles(processedFiles);
 
     if (images.length === 0 && videos.length === 0) {
       return res.status(400).json({ error: 'Vui lòng thêm ít nhất 1 ảnh hoặc video.' });
     }
 
+    // 5. Create Listing
     if (listingData.location?.coordinates) {
       const coords = listingData.location.coordinates;
       if (coords.lat !== undefined && coords.lng !== undefined && !coords.type) {
@@ -238,15 +227,8 @@ router.post('/', auth, isLandlord, uploadArray('media', 10), async (req, res) =>
     });
   } catch (error) {
     console.error('Error creating listing:', error);
-    
     if (!res.headersSent) {
-      if (error.name === 'ValidationError') {
-        const errors = Object.values(error.errors).map(err => err.message);
-        return res.status(400).json({ error: errors.join(', ') });
-      }
-      res.status(500).json({ 
-        error: error.message || 'Lỗi server. Vui lòng thử lại sau.' 
-      });
+      res.status(500).json({ error: error.message || 'Lỗi server.' });
     }
   }
 });
@@ -254,14 +236,11 @@ router.post('/', auth, isLandlord, uploadArray('media', 10), async (req, res) =>
 // Update listing
 router.put('/:id', auth, isLandlord, uploadArray('media', 10), async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(404).json({ error: 'Listing not found' });
-    }
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Listing not found' });
 
     const listing = await Listing.findById(req.params.id);
-    
     if (!listing) return res.status(404).json({ error: 'Không tìm thấy bài đăng' });
-    if (listing.landlord.toString() !== req.userId) return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa bài đăng này' });
+    if (listing.landlord.toString() !== req.userId) return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa' });
 
     let updates;
     if (req.body.data) {
@@ -274,11 +253,20 @@ router.put('/:id', auth, isLandlord, uploadArray('media', 10), async (req, res) 
       updates = req.body;
     }
 
-    // FIX APPLIED HERE: Direct access to req.files
-    const files = req.files || [];
-    if (files.length > 0) {
-      const { images: newImages, videos: newVideos } = getMediaFromFiles(files);
-
+    // HANDLE UPLOAD
+    let processedFiles = [];
+    if (req.files && req.files.length > 0) {
+      try {
+        processedFiles = await uploadMiddleware.uploadToCloudinary(req.files, 'findroom/listings');
+      } catch (uploadError) {
+        console.error('Error uploading files:', uploadError);
+        return res.status(500).json({ error: 'Lỗi upload file.' });
+      }
+    }
+    
+    if (processedFiles.length > 0) {
+      const { images: newImages, videos: newVideos } = getMediaFromProcessedFiles(processedFiles);
+      
       const existingImages = Array.isArray(listing.images) ? listing.images : [];
       const existingVideos = Array.isArray(listing.videos) ? listing.videos : [];
 
@@ -328,9 +316,9 @@ router.delete('/:id', auth, isLandlord, async (req, res) => {
 router.patch('/:id/status', auth, isLandlord, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Listing not found' });
-
     const { status } = req.body;
     const listing = await Listing.findById(req.params.id);
+    
     if (!listing) return res.status(404).json({ error: 'Listing not found' });
     if (listing.landlord.toString() !== req.userId) return res.status(403).json({ error: 'Not authorized' });
 
@@ -342,31 +330,8 @@ router.patch('/:id/status', auth, isLandlord, async (req, res) => {
   }
 });
 
-// Track search keyword
-router.post('/:id/track-keyword', async (req, res) => {
-  try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Listing not found' });
-
-    const { keyword } = req.body;
-    if (!keyword || !keyword.trim()) return res.json({ message: 'Keyword tracked' });
-
-    const listing = await Listing.findById(req.params.id);
-    if (!listing) return res.json({ message: 'Keyword tracked' });
-
-    listing.searchKeywords = listing.searchKeywords || [];
-    const existingKeyword = listing.searchKeywords.find(k => k.keyword === keyword.trim());
-    
-    if (existingKeyword) existingKeyword.count += 1;
-    else listing.searchKeywords.push({ keyword: keyword.trim(), count: 1 });
-    
-    await listing.save();
-    res.json({ message: 'Keyword tracked' });
-  } catch (error) {
-    if (!res.headersSent) res.status(500).json({ error: 'Server error' });
-  }
-});
-
 module.exports = router;
+
 /*const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
