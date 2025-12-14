@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../utils/errorHandler';
 import { getImageUrl, getAvatarUrl } from '../utils/imageHelper';
+import { useTranslation } from 'react-i18next'; // Import i18n hook
 
 interface Listing {
   _id: string;
@@ -57,6 +58,7 @@ interface Review {
 }
 
 const ListingDetail = () => {
+  const { t } = useTranslation(); // Initialize translation
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -70,6 +72,22 @@ const ListingDetail = () => {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [stayedAt, setStayedAt] = useState('');
+
+  // Mapping for Amenities (Database Value -> Translation Key)
+  const amenityMapping: { [key: string]: string } = {
+    'Điều hòa': 'ac',
+    'Nóng lạnh': 'heater',
+    'Tủ lạnh': 'fridge',
+    'Máy giặt': 'washer',
+    'Wifi': 'wifi',
+    'Bãi đỗ xe': 'parking',
+    'Thang máy': 'elevator',
+    'An ninh 24/7': 'security',
+    'Cho phép nấu ăn': 'kitchen',
+    'Gần trường': 'school',
+    'Gần chợ': 'market',
+    'Gần bệnh viện': 'hospital'
+  };
 
   // Fallback image function
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -90,7 +108,7 @@ const ListingDetail = () => {
       const response = await axios.get(`/api/listings/${id}`);
       setListing(response.data.listing);
     } catch (error) {
-      toast.error('Không thể tải thông tin phòng');
+      toast.error(t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -129,48 +147,48 @@ const ListingDetail = () => {
 
   const handleSaveToggle = async () => {
     if (!user) {
-      toast.error('Vui lòng đăng nhập để lưu phòng');
+      toast.error(t('listingDetail.errors.loginToSave'));
       return;
     }
     try {
       const response = await axios.post(`/api/users/saved-listings/${id}`);
       setIsSaved(response.data.saved);
-      toast.success(response.data.saved ? 'Đã lưu phòng' : 'Đã hủy lưu phòng');
+      toast.success(response.data.saved ? t('listingDetail.buttons.saved') : t('common.success'));
     } catch (error) {
       console.error('Failed to toggle save:', error);
-      toast.error('Không thể cập nhật');
+      toast.error(t('common.error'));
     }
   };
 
   const handleMarkAsStayed = async () => {
     if (!user) {
-      toast.error('Vui lòng đăng nhập');
+      toast.error(t('listingDetail.errors.loginToReview'));
       return;
     }
     if (!stayedAt) {
-      toast.error('Vui lòng chọn ngày đã ở');
+      toast.error(t('listingDetail.errors.noDate'));
       return;
     }
     try {
       await axios.post(`/api/users/stayed-listings/${id}`, { stayedAt });
       setHasStayed(true);
-      toast.success('Đã đánh dấu phòng là đã ở');
+      toast.success(t('listingDetail.errors.markSuccess'));
     } catch (error) {
-      toast.error('Không thể cập nhật');
+      toast.error(t('common.error'));
     }
   };
 
   const handleSubmitReview = async () => {
     if (!user) {
-      toast.error('Vui lòng đăng nhập');
+      toast.error(t('listingDetail.errors.loginToReview'));
       return;
     }
     if (!hasStayed) {
-      toast.error('Bạn phải đánh dấu phòng là "đã ở" trước khi đánh giá');
+      toast.error(t('listingDetail.errors.mustStay'));
       return;
     }
     if (!reviewComment.trim()) {
-      toast.error('Vui lòng nhập bình luận');
+      toast.error(t('listingDetail.errors.noComment'));
       return;
     }
     try {
@@ -180,13 +198,13 @@ const ListingDetail = () => {
         comment: reviewComment,
         stayedAt: stayedAt || new Date().toISOString()
       });
-      toast.success('Đánh giá thành công!');
+      toast.success(t('listingDetail.reviews.success'));
       setShowReviewForm(false);
       setReviewComment('');
       fetchReviews();
       fetchListing(); 
     } catch (error: any) {
-      const errorMessage = getErrorMessage(error, 'Không thể đánh giá');
+      const errorMessage = getErrorMessage(error, t('common.error'));
       toast.error(errorMessage);
     }
   };
@@ -209,7 +227,7 @@ const ListingDetail = () => {
   if (!listing) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
-        <p className="text-xl text-gray-600 dark:text-gray-400">Không tìm thấy phòng</p>
+        <p className="text-xl text-gray-600 dark:text-gray-400">{t('listingDetail.notFound')}</p>
       </div>
     );
   }
@@ -273,7 +291,7 @@ const ListingDetail = () => {
                   <span className="ml-1 font-bold text-lg">{listing.rating.average.toFixed(1)}</span>
                 </div>
                 <span className="text-gray-600 dark:text-gray-400">
-                  ({listing.rating.count} đánh giá)
+                  ({listing.rating.count} {t('listingDetail.reviews.title').toLowerCase()})
                 </span>
               </div>
             )}
@@ -290,25 +308,28 @@ const ListingDetail = () => {
               </div>
               <div className="flex items-center">
                 <FiUsers className="mr-2" />
-                {listing.roomDetails.capacity} người
+                {listing.roomDetails.capacity} {t('listingDetail.capacity')}
               </div>
             </div>
           </div>
 
           <div className="card p-6">
-            <h2 className="text-2xl font-bold mb-4">Mô tả</h2>
+            <h2 className="text-2xl font-bold mb-4">{t('listingDetail.description')}</h2>
             <p className="whitespace-pre-line text-gray-700 dark:text-gray-300">
               {listing.description}
             </p>
           </div>
 
           <div className="card p-6">
-            <h2 className="text-2xl font-bold mb-4">Tiện nghi</h2>
+            <h2 className="text-2xl font-bold mb-4">{t('listingDetail.amenities')}</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {listing.amenities.map((amenity, index) => (
                 <div key={index} className="flex items-center">
                   <FiCheck className="text-green-500 mr-2" />
-                  {amenity}
+                  {/* Translate amenity if mapping exists, otherwise fallback to raw text */}
+                  {amenityMapping[amenity] 
+                    ? t(`create.amenities.${amenityMapping[amenity]}`) 
+                    : amenity}
                 </div>
               ))}
             </div>
@@ -316,7 +337,7 @@ const ListingDetail = () => {
 
           {listing.rules && (
             <div className="card p-6">
-              <h2 className="text-2xl font-bold mb-4">Nội quy</h2>
+              <h2 className="text-2xl font-bold mb-4">{t('listingDetail.rules')}</h2>
               <p className="whitespace-pre-line text-gray-700 dark:text-gray-300">
                 {listing.rules}
               </p>
@@ -326,22 +347,22 @@ const ListingDetail = () => {
           {/* Reviews Section */}
           <div className="card p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">Đánh giá</h2>
+              <h2 className="text-2xl font-bold">{t('listingDetail.reviews.title')}</h2>
               {user && user.role === 'tenant' && hasStayed && !showReviewForm && (
                 <button
                   onClick={() => setShowReviewForm(true)}
                   className="btn-primary"
                 >
-                  Viết đánh giá
+                  {t('listingDetail.reviews.writeButton')}
                 </button>
               )}
             </div>
 
             {showReviewForm && (
               <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <h3 className="font-bold mb-4">Viết đánh giá</h3>
+                <h3 className="font-bold mb-4">{t('listingDetail.reviews.writeButton')}</h3>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2">Đánh giá (sao)</label>
+                  <label className="block text-sm font-medium mb-2">{t('listingDetail.reviews.ratingLabel')}</label>
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -360,7 +381,7 @@ const ListingDetail = () => {
                   </div>
                 </div>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2">Ngày đã ở</label>
+                  <label className="block text-sm font-medium mb-2">{t('listingDetail.stayed.dateLabel')}</label>
                   <input
                     type="date"
                     className="input w-full"
@@ -370,18 +391,18 @@ const ListingDetail = () => {
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2">Bình luận</label>
+                  <label className="block text-sm font-medium mb-2">{t('listingDetail.reviews.commentLabel')}</label>
                   <textarea
                     className="input w-full"
                     rows={4}
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
-                    placeholder="Chia sẻ trải nghiệm của bạn..."
+                    placeholder={t('listingDetail.reviews.commentPlaceholder')}
                   />
                 </div>
                 <div className="flex gap-2">
                   <button onClick={handleSubmitReview} className="btn-primary">
-                    Gửi đánh giá
+                    {t('listingDetail.reviews.submit')}
                   </button>
                   <button
                     onClick={() => {
@@ -390,7 +411,7 @@ const ListingDetail = () => {
                     }}
                     className="btn-secondary"
                   >
-                    Hủy
+                    {t('listingDetail.reviews.cancel')}
                   </button>
                 </div>
               </div>
@@ -398,7 +419,7 @@ const ListingDetail = () => {
 
             {reviews.length === 0 ? (
               <p className="text-gray-600 dark:text-gray-400 text-center py-8">
-                Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!
+                {t('listingDetail.reviews.empty')}
               </p>
             ) : (
               <div className="space-y-4">
@@ -439,22 +460,22 @@ const ListingDetail = () => {
         <div className="space-y-6">
           <div className="card p-6 sticky top-20">
             <div className="text-3xl font-bold text-primary-600 mb-4">
-              {formatPrice(listing.price)}/tháng
+              {formatPrice(listing.price)}{t('listingDetail.price.perMonth')}
             </div>
 
             {listing.deposit > 0 && (
               <div className="text-gray-600 dark:text-gray-400 mb-6">
-                Đặt cọc: {formatPrice(listing.deposit)}
+                {t('listingDetail.price.deposit')}: {formatPrice(listing.deposit)}
               </div>
             )}
 
             <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mb-6">
-              <h3 className="font-bold mb-3">Thông tin chủ trọ</h3>
+              <h3 className="font-bold mb-3">{t('listingDetail.landlord.info')}</h3>
               <div className="space-y-2">
                 <p className="flex items-center">
                   <span className="font-medium mr-2">{listing.landlord.name}</span>
                   {listing.landlord.verifiedBadge && (
-                    <span className="text-green-500 text-xs">✓ Uy tín</span>
+                    <span className="text-green-500 text-xs">✓ {t('listingDetail.landlord.verified')}</span>
                   )}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -469,7 +490,7 @@ const ListingDetail = () => {
                 className="w-full btn-primary mb-3 flex items-center justify-center"
               >
                 <FiMessageCircle className="mr-2" />
-                Nhắn tin cho chủ trọ
+                {t('listingDetail.buttons.message')}
               </button>
             )}
             
@@ -484,13 +505,13 @@ const ListingDetail = () => {
                   }`}
                 >
                   <FiHeart className={`mr-2 ${isSaved ? 'fill-current' : ''}`} />
-                  {isSaved ? 'Đã lưu' : 'Lưu tin'}
+                  {isSaved ? t('listingDetail.buttons.saved') : t('listingDetail.buttons.save')}
                 </button>
 
                 {!hasStayed && (
                   <div className="mb-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                     <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                      Đánh dấu phòng là "đã ở" để có thể đánh giá
+                      {t('listingDetail.stayed.hint')}
                     </p>
                     <input
                       type="date"
@@ -503,14 +524,14 @@ const ListingDetail = () => {
                       onClick={handleMarkAsStayed}
                       className="w-full btn-secondary text-sm"
                     >
-                      Đánh dấu đã ở
+                      {t('listingDetail.buttons.markStayed')}
                     </button>
                   </div>
                 )}
 
                 {hasStayed && (
                   <div className="mb-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-sm text-green-700 dark:text-green-300">
-                    ✓ Bạn đã đánh dấu phòng này là đã ở
+                    ✓ {t('listingDetail.buttons.markedStayed')}
                   </div>
                 )}
               </>

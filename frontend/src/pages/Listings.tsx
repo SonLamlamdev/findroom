@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import DistrictAutocomplete from '../components/DistrictAutocomplete';
 import { getImageUrl } from '../utils/imageHelper';
+import { useTranslation } from 'react-i18next'; // 1. Import hook
 
 interface Listing {
   _id: string;
@@ -29,6 +30,7 @@ interface Listing {
 }
 
 const Listings = () => {
+  const { t } = useTranslation(); // 2. Initialize translation
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const { user } = useAuth();
@@ -47,11 +49,23 @@ const Listings = () => {
   const [sortBy, setSortBy] = useState('-createdAt');
   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
 
-  const commonAmenities = [
-    'Điều hòa', 'Nóng lạnh', 'Tủ lạnh', 'Máy giặt',
-    'Wifi', 'Bãi đỗ xe', 'Thang máy', 'An ninh 24/7',
-    'Cho phép nấu ăn', 'Gần trường', 'Gần chợ', 'Gần bệnh viện'
-  ];
+  // Mapping for translation keys to database values
+  const amenityMapping: { [key: string]: string } = {
+    'Điều hòa': 'ac',
+    'Nóng lạnh': 'heater',
+    'Tủ lạnh': 'fridge',
+    'Máy giặt': 'washer',
+    'Wifi': 'wifi',
+    'Bãi đỗ xe': 'parking',
+    'Thang máy': 'elevator',
+    'An ninh 24/7': 'security',
+    'Cho phép nấu ăn': 'kitchen',
+    'Gần trường': 'school',
+    'Gần chợ': 'market',
+    'Gần bệnh viện': 'hospital'
+  };
+
+  const commonAmenities = Object.keys(amenityMapping);
 
   useEffect(() => {
     fetchListings();
@@ -90,7 +104,7 @@ const Listings = () => {
       const response = await axios.get(`/api/listings?${params.toString()}`);
       setListings(response.data.listings);
     } catch (error) {
-      toast.error('Không thể tải danh sách phòng');
+      toast.error(t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -120,14 +134,14 @@ const Listings = () => {
       
       if (response.data.saved) {
         setSavedListingIds([...savedListingIds, listingId]);
-        toast.success('Đã lưu phòng trọ');
+        toast.success(t('common.success'));
       } else {
         setSavedListingIds(savedListingIds.filter(id => id !== listingId));
-        toast.success('Đã hủy lưu phòng trọ');
+        toast.success(t('common.success'));
       }
     } catch (error) {
       console.error('Failed to toggle save:', error);
-      toast.error('Không thể lưu phòng trọ');
+      toast.error(t('common.error'));
     }
   };
 
@@ -154,24 +168,24 @@ const Listings = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Danh sách phòng trọ</h1>
+        <h1 className="text-3xl font-bold">{t('listings.title')}</h1>
         <div className="flex gap-2">
           <button
             onClick={() => setShowFilterSidebar(!showFilterSidebar)}
             className="btn-secondary"
           >
-            {showFilterSidebar ? 'Ẩn' : 'Hiện'} Bộ lọc
+             {showFilterSidebar ? t('map.hideList') : t('common.filter')} {/* Reused keys creatively */}
           </button>
           <select
             className="input"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
           >
-            <option value="-createdAt">Mới nhất</option>
-            <option value="createdAt">Cũ nhất</option>
-            <option value="price">Giá tăng dần</option>
-            <option value="-price">Giá giảm dần</option>
-            <option value="rating">Đánh giá cao</option>
+            <option value="-createdAt">{t('listings.sort.newest')}</option>
+            <option value="createdAt">{t('listings.sort.newest').replace('Mới', 'Cũ').replace('Newest', 'Oldest')}</option> {/* Fallback for Oldest if not in keys, or add key later */}
+            <option value="price">{t('listings.sort.priceLowHigh')}</option>
+            <option value="-price">{t('listings.sort.priceHighLow')}</option>
+            <option value="rating">{t('listings.sort.rating')}</option>
             <option value="views">Nhiều lượt xem</option>
           </select>
         </div>
@@ -181,14 +195,14 @@ const Listings = () => {
         {/* Filter Sidebar */}
         {showFilterSidebar && (
           <div className="w-64 card p-6 h-fit sticky top-4">
-            <h3 className="font-bold mb-4">Bộ lọc</h3>
+            <h3 className="font-bold mb-4">{t('common.filter')}</h3>
             
             {/* Search */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Tìm kiếm</label>
+              <label className="block text-sm font-medium mb-2">{t('common.search')}</label>
               <input
                 type="text"
-                placeholder="Từ khóa..."
+                placeholder={t('listings.searchPlaceholder')}
                 className="input w-full"
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
@@ -197,18 +211,18 @@ const Listings = () => {
 
             {/* Price Range */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Khoảng giá (VNĐ/tháng)</label>
+              <label className="block text-sm font-medium mb-2">{t('listings.filters.priceRange')} (VNĐ)</label>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="number"
-                  placeholder="Tối thiểu"
+                  placeholder={t('listings.filters.minPrice')}
                   className="input"
                   value={filters.minPrice}
                   onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
                 />
                 <input
                   type="number"
-                  placeholder="Tối đa"
+                  placeholder={t('listings.filters.maxPrice')}
                   className="input"
                   value={filters.maxPrice}
                   onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
@@ -218,26 +232,26 @@ const Listings = () => {
 
             {/* Room Type */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Loại phòng</label>
+              <label className="block text-sm font-medium mb-2">{t('listings.filters.roomType')}</label>
               <select
                 className="input w-full"
                 value={filters.roomType}
                 onChange={(e) => setFilters({ ...filters, roomType: e.target.value })}
               >
-                <option value="">Tất cả</option>
-                <option value="single">Phòng đơn</option>
-                <option value="shared">Phòng ghép</option>
-                <option value="apartment">Căn hộ</option>
-                <option value="house">Nhà nguyên căn</option>
+                <option value="">All</option>
+                <option value="single">{t('create.roomTypes.single')}</option>
+                <option value="shared">{t('create.roomTypes.shared')}</option>
+                <option value="apartment">{t('create.roomTypes.apartment')}</option>
+                <option value="house">{t('create.roomTypes.house')}</option>
               </select>
             </div>
 
             {/* Location */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Khu vực</label>
+              <label className="block text-sm font-medium mb-2">{t('common.location')}</label>
               <input
                 type="text"
-                placeholder="Thành phố"
+                placeholder={t('create.labels.city')}
                 className="input w-full mb-2"
                 value={filters.city}
                 onChange={(e) => setFilters({ ...filters, city: e.target.value })}
@@ -245,13 +259,13 @@ const Listings = () => {
               <DistrictAutocomplete
                 value={filters.district}
                 onChange={(district) => setFilters({ ...filters, district })}
-                placeholder="Quận/Huyện"
+                placeholder={t('listings.filters.district')}
               />
             </div>
 
             {/* Amenities */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Tiện nghi</label>
+              <label className="block text-sm font-medium mb-2">{t('listings.filters.amenities')}</label>
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {commonAmenities.map((amenity) => (
                   <label key={amenity} className="flex items-center cursor-pointer">
@@ -261,14 +275,17 @@ const Listings = () => {
                       onChange={() => handleAmenityToggle(amenity)}
                       className="mr-2 w-4 h-4"
                     />
-                    <span className="text-sm">{amenity}</span>
+                    {/* Translate the display label, keep value internal */}
+                    <span className="text-sm">
+                      {t(`create.amenities.${amenityMapping[amenity]}`)}
+                    </span>
                   </label>
                 ))}
               </div>
             </div>
 
             <button onClick={handleSearch} className="btn-primary w-full">
-              Áp dụng bộ lọc
+              {t('common.filter')}
             </button>
           </div>
         )}
@@ -276,90 +293,91 @@ const Listings = () => {
         {/* Main Content */}
         <div className={`flex-1 ${showFilterSidebar ? '' : 'max-w-full'}`}>
           {/* Listings Grid */}
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {listings.map((listing) => (
-            <Link
-              key={listing._id}
-              to={`/listings/${listing._id}`}
-              className="card overflow-hidden group"
-            >
-              {/* Image */}
-              <div className="relative h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                {listing.images[0] ? (
-                  <img
-                    src={getImageUrl(listing.images[0])}
-                    alt={listing.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <FiHome size={48} className="text-gray-400" />
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {listings.map((listing) => (
+                <Link
+                  key={listing._id}
+                  to={`/listings/${listing._id}`}
+                  className="card overflow-hidden group"
+                >
+                  {/* Image */}
+                  <div className="relative h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                    {listing.images[0] ? (
+                      <img
+                        src={getImageUrl(listing.images[0])}
+                        alt={listing.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        onError={(e) => { e.currentTarget.src = 'https://placehold.co/600x400?text=No+Image'; }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <FiHome size={48} className="text-gray-400" />
+                      </div>
+                    )}
+                    
+                    {/* Save Button */}
+                    {user && (
+                      <button
+                        className={`absolute top-4 right-4 p-2 rounded-full transition-all ${
+                          savedListingIds.includes(listing._id)
+                            ? 'bg-red-500 text-white hover:bg-red-600'
+                            : 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                        onClick={(e) => handleToggleSave(listing._id, e)}
+                        title={savedListingIds.includes(listing._id) ? t('common.cancel') : t('common.save')}
+                      >
+                        <FiHeart className={savedListingIds.includes(listing._id) ? 'fill-current' : ''} />
+                      </button>
+                    )}
                   </div>
-                )}
-                
-                {/* Save Button */}
-                {user && (
-                  <button
-                    className={`absolute top-4 right-4 p-2 rounded-full transition-all ${
-                      savedListingIds.includes(listing._id)
-                        ? 'bg-red-500 text-white hover:bg-red-600'
-                        : 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                    onClick={(e) => handleToggleSave(listing._id, e)}
-                    title={savedListingIds.includes(listing._id) ? 'Hủy lưu' : 'Lưu phòng trọ'}
-                  >
-                    <FiHeart className={savedListingIds.includes(listing._id) ? 'fill-current' : ''} />
-                  </button>
-                )}
-              </div>
 
-              {/* Content */}
-              <div className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-lg font-semibold line-clamp-2 flex-1">
-                    {listing.title}
-                  </h3>
-                  {listing.customId && (
-                    <span className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 ml-2 whitespace-nowrap">
-                      {listing.customId}
-                    </span>
-                  )}
-                </div>
-                
-                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  <FiMapPin className="mr-1" size={14} />
-                  {listing.location.district}, {listing.location.city}
-                </div>
+                  {/* Content */}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="text-lg font-semibold line-clamp-2 flex-1">
+                        {listing.title}
+                      </h3>
+                      {listing.customId && (
+                        <span className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 ml-2 whitespace-nowrap">
+                          {listing.customId}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      <FiMapPin className="mr-1" size={14} />
+                      {listing.location.district}, {listing.location.city}
+                    </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="text-primary-600 font-bold text-xl">
-                    {formatPrice(listing.price)}/tháng
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {listing.roomDetails.area}m²
-                  </div>
-                </div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-primary-600 font-bold text-xl">
+                        {formatPrice(listing.price)}
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        {listing.roomDetails.area}m²
+                      </div>
+                    </div>
 
-                {listing.landlord.verifiedBadge && (
-                  <div className="mt-2 inline-flex items-center text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-2 py-1 rounded">
-                    ✓ Chủ trọ uy tín
+                    {listing.landlord.verifiedBadge && (
+                      <div className="mt-2 inline-flex items-center text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-2 py-1 rounded">
+                        ✓ {t('home.features.verified')}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+                </Link>
+              ))}
+            </div>
+          )}
 
           {!loading && listings.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-600 dark:text-gray-400 text-lg">
-                Không tìm thấy phòng trọ phù hợp
+                {t('listings.noResults')}
               </p>
             </div>
           )}
@@ -370,11 +388,3 @@ const Listings = () => {
 };
 
 export default Listings;
-
-
-
-
-
-
-
-

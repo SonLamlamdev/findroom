@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "cloudinary": "^2.8.0",
+    "i18next-browser-languagedetector": "^8.2.0",
     "multer-storage-cloudinary": "^2.2.1"
   }
 }

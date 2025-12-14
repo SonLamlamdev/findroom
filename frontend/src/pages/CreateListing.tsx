@@ -6,8 +6,10 @@ import MapPicker from '../components/MapPicker';
 import DistrictAutocomplete from '../components/DistrictAutocomplete';
 import { FiUpload, FiX } from 'react-icons/fi';
 import { getErrorMessage } from '../utils/errorHandler';
+import { useTranslation } from 'react-i18next'; // Import Translation Hook
 
 const CreateListing = () => {
+  const { t } = useTranslation(); // Initialize Hook
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -30,18 +32,31 @@ const CreateListing = () => {
     rules: ''
   });
 
+  // Room Types with translation keys
   const roomTypes = [
-    { value: 'single', label: 'Phòng đơn' },
-    { value: 'shared', label: 'Phòng ghép' },
-    { value: 'apartment', label: 'Căn hộ' },
-    { value: 'house', label: 'Nhà nguyên căn' }
+    { value: 'single', label: t('create.roomTypes.single') },
+    { value: 'shared', label: t('create.roomTypes.shared') },
+    { value: 'apartment', label: t('create.roomTypes.apartment') },
+    { value: 'house', label: t('create.roomTypes.house') }
   ];
 
-  const commonAmenities = [
-    'Điều hòa', 'Nóng lạnh', 'Tủ lạnh', 'Máy giặt',
-    'Wifi', 'Bãi đỗ xe', 'Thang máy', 'An ninh 24/7',
-    'Cho phép nấu ăn', 'Gần trường', 'Gần chợ', 'Gần bệnh viện'
-  ];
+  // Mapping object for Amenities (Database Value -> Translation Key)
+  const amenityMapping: { [key: string]: string } = {
+    'Điều hòa': 'ac',
+    'Nóng lạnh': 'heater',
+    'Tủ lạnh': 'fridge',
+    'Máy giặt': 'washer',
+    'Wifi': 'wifi',
+    'Bãi đỗ xe': 'parking',
+    'Thang máy': 'elevator',
+    'An ninh 24/7': 'security',
+    'Cho phép nấu ăn': 'kitchen',
+    'Gần trường': 'school',
+    'Gần chợ': 'market',
+    'Gần bệnh viện': 'hospital'
+  };
+
+  const commonAmenities = Object.keys(amenityMapping);
 
   const handleAmenityToggle = (amenity: string) => {
     setFormData(prev => ({
@@ -56,14 +71,14 @@ const CreateListing = () => {
     const files = Array.from(e.target.files || []);
     
     if (selectedFiles.length + files.length > 10) {
-      toast.error('Tối đa 10 ảnh');
+      toast.error(t('create.errors.maxFiles'));
       return;
     }
 
     // Validate file size (10MB max)
     const oversizedFiles = files.filter(file => file.size > 10 * 1024 * 1024);
     if (oversizedFiles.length > 0) {
-      toast.error('Kích thước file không được vượt quá 10MB');
+      toast.error(t('create.errors.fileSize'));
       return;
     }
 
@@ -88,12 +103,12 @@ const CreateListing = () => {
     e.preventDefault();
 
     if (!formData.coordinates) {
-      toast.error('Vui lòng chọn vị trí trên bản đồ');
+      toast.error(t('create.errors.location'));
       return;
     }
 
     if (selectedFiles.length === 0) {
-      toast.error('Vui lòng thêm ít nhất 1 ảnh');
+      toast.error(t('create.errors.minImage'));
       return;
     }
 
@@ -138,11 +153,11 @@ const CreateListing = () => {
         }
       });
 
-      toast.success('Đã đăng tin thành công! 🎉');
+      toast.success(t('create.errors.success'));
       navigate(`/listings/${response.data.listing._id}`);
     } catch (error: any) {
       console.error(error);
-      const errorMessage = getErrorMessage(error, 'Không thể đăng tin');
+      const errorMessage = getErrorMessage(error, t('common.error'));
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -153,26 +168,26 @@ const CreateListing = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Đăng tin cho thuê phòng trọ</h1>
+          <h1 className="text-3xl font-bold mb-2">{t('create.pageTitle')}</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Giống như đăng bài Facebook - Dễ dàng và nhanh chóng! ✨
+            {t('create.pageSubtitle')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Upload Photos */}
           <div className="card p-6">
-            <h2 className="text-xl font-bold mb-4">📸 Ảnh</h2>
+            <h2 className="text-xl font-bold mb-4">{t('create.sections.media')}</h2>
             
             <div className="mb-4">
               <label className="block w-full">
                 <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-primary-500 transition-colors">
                   <FiUpload className="mx-auto text-gray-400 mb-2" size={40} />
                   <p className="text-gray-600 dark:text-gray-400 mb-1">
-                    Click để chọn ảnh
+                    {t('create.labels.upload')}
                   </p>
                   <p className="text-sm text-gray-500">
-                    Tối đa 10 file, mỗi file không quá 10MB
+                    {t('create.labels.uploadLimit')}
                   </p>
                 </div>
                 <input
@@ -210,12 +225,12 @@ const CreateListing = () => {
 
           {/* Basic Info */}
           <div className="card p-6">
-            <h2 className="text-xl font-bold mb-4">📝 Thông tin cơ bản</h2>
+            <h2 className="text-xl font-bold mb-4">{t('create.sections.basicInfo')}</h2>
             
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Tiêu đề bài đăng *
+                  {t('create.labels.title')}
                 </label>
                 <input
                   type="text"
@@ -223,13 +238,13 @@ const CreateListing = () => {
                   className="input"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="VD: Phòng trọ đẹp gần ĐH Bách Khoa, giá rẻ, đầy đủ tiện nghi"
+                  placeholder={t('create.labels.titlePlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Mô tả chi tiết *
+                  {t('create.labels.description')}
                 </label>
                 <textarea
                   required
@@ -237,14 +252,14 @@ const CreateListing = () => {
                   className="input"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Mô tả chi tiết về phòng trọ: đặc điểm, ưu điểm, vị trí gần những gì, điều kiện thuê..."
+                  placeholder={t('create.labels.descriptionPlaceholder')}
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Giá thuê (VNĐ/tháng) *
+                    {t('create.labels.price')}
                   </label>
                   <input
                     type="number"
@@ -258,7 +273,7 @@ const CreateListing = () => {
 
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Tiền cọc (VNĐ)
+                    {t('create.labels.deposit')}
                   </label>
                   <input
                     type="number"
@@ -272,7 +287,7 @@ const CreateListing = () => {
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Diện tích (m²) *</label>
+                  <label className="block text-sm font-medium mb-2">{t('create.labels.area')}</label>
                   <input
                     type="number"
                     required
@@ -284,7 +299,7 @@ const CreateListing = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Số người *</label>
+                  <label className="block text-sm font-medium mb-2">{t('create.labels.capacity')}</label>
                   <input
                     type="number"
                     required
@@ -296,7 +311,7 @@ const CreateListing = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Phòng ngủ</label>
+                  <label className="block text-sm font-medium mb-2">{t('create.labels.bedrooms')}</label>
                   <input
                     type="number"
                     className="input"
@@ -307,7 +322,7 @@ const CreateListing = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Phòng tắm</label>
+                  <label className="block text-sm font-medium mb-2">{t('create.labels.bathrooms')}</label>
                   <input
                     type="number"
                     className="input"
@@ -319,7 +334,7 @@ const CreateListing = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Loại phòng *</label>
+                <label className="block text-sm font-medium mb-2">{t('create.labels.roomType')}</label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {roomTypes.map((type) => (
                     <button
@@ -342,33 +357,33 @@ const CreateListing = () => {
 
           {/* Location with Map */}
           <div className="card p-6">
-            <h2 className="text-xl font-bold mb-4">📍 Vị trí trên bản đồ</h2>
+            <h2 className="text-xl font-bold mb-4">{t('create.sections.location')}</h2>
             
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-sm font-medium mb-2">Địa chỉ chi tiết *</label>
+                <label className="block text-sm font-medium mb-2">{t('create.labels.address')}</label>
                 <input
                   type="text"
                   required
                   className="input"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Số nhà, tên đường, phường/xã"
+                  placeholder={t('create.labels.address')}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Quận/Huyện *</label>
+                  <label className="block text-sm font-medium mb-2">{t('create.labels.district')}</label>
                   <DistrictAutocomplete
                     value={formData.district}
                     onChange={(district) => setFormData({ ...formData, district })}
-                    placeholder="Quận 1, Quận 2..."
+                    placeholder={t('create.labels.district')}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Thành phố</label>
+                  <label className="block text-sm font-medium mb-2">{t('create.labels.city')}</label>
                   <input
                     type="text"
                     className="input"
@@ -383,11 +398,9 @@ const CreateListing = () => {
               position={formData.coordinates}
               onPositionChange={(pos) => setFormData({ ...formData, coordinates: pos })}
               onAddressChange={(addr) => {
-                // Auto-fill address when user selects location on map
                 setFormData((prev) => ({ ...prev, address: addr }));
               }}
               onDistrictChange={(district) => {
-                // Auto-fill district when user selects location on map
                 if (district) {
                   setFormData((prev) => ({ ...prev, district: district }));
                 }
@@ -397,7 +410,7 @@ const CreateListing = () => {
 
           {/* Amenities */}
           <div className="card p-6">
-            <h2 className="text-xl font-bold mb-4">✨ Tiện nghi</h2>
+            <h2 className="text-xl font-bold mb-4">{t('create.sections.amenities')}</h2>
             
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {commonAmenities.map((amenity) => (
@@ -411,7 +424,9 @@ const CreateListing = () => {
                     onChange={() => handleAmenityToggle(amenity)}
                     className="mr-2 w-4 h-4"
                   />
-                  <span className="text-sm">{amenity}</span>
+                  <span className="text-sm">
+                    {t(`create.amenities.${amenityMapping[amenity]}`)}
+                  </span>
                 </label>
               ))}
             </div>
@@ -419,13 +434,13 @@ const CreateListing = () => {
 
           {/* Rules */}
           <div className="card p-6">
-            <h2 className="text-xl font-bold mb-4">📋 Nội quy</h2>
+            <h2 className="text-xl font-bold mb-4">{t('create.sections.rules')}</h2>
             <textarea
               rows={4}
               className="input"
               value={formData.rules}
               onChange={(e) => setFormData({ ...formData, rules: e.target.value })}
-              placeholder="VD: Không hút thuốc, không nuôi thú cưng, giờ giấc tự do..."
+              placeholder={t('create.labels.rulesPlaceholder')}
             />
           </div>
 
@@ -436,14 +451,14 @@ const CreateListing = () => {
               disabled={loading}
               className="flex-1 btn-primary disabled:opacity-50 py-3 text-lg font-semibold"
             >
-              {loading ? '⏳ Đang đăng tin...' : '🚀 Đăng tin ngay'}
+              {loading ? t('create.buttons.submitting') : t('create.buttons.submit')}
             </button>
             <button
               type="button"
               onClick={() => navigate('/dashboard')}
               className="btn-secondary py-3 px-6"
             >
-              Hủy
+              {t('create.buttons.cancel')}
             </button>
           </div>
         </form>
