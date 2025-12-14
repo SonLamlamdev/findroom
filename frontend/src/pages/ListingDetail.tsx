@@ -220,22 +220,12 @@ const ListingDetail = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
         <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden relative">
           {listing.images && listing.images.length > 0 ? (
-            <>
-              <img
-                src={getImageUrl(listing.images[selectedImage])}
-                alt={listing.title}
-                className="w-full h-full object-cover"
-                onError={handleImageError}
-              />
-              
-              {/* --- DEBUG OVERLAY: START --- */}
-              <div className="absolute bottom-0 left-0 bg-black/80 text-white p-4 text-xs font-mono w-full break-all z-10 border-t border-red-500">
-                <p><strong className="text-yellow-400">DEBUG MODE:</strong></p>
-                <p><strong>1. RAW (from DB):</strong> {listing.images[selectedImage]}</p>
-                <p><strong>2. PROCESSED (used in src):</strong> {getImageUrl(listing.images[selectedImage])}</p>
-              </div>
-              {/* --- DEBUG OVERLAY: END --- */}
-            </>
+            <img
+              src={getImageUrl(listing.images[selectedImage])}
+              alt={listing.title}
+              className="w-full h-full object-cover"
+              onError={handleImageError}
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <FiHome size={64} className="text-gray-400" />
