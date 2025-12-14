@@ -33,6 +33,7 @@ const BlogPost = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const [post, setPost] = useState<BlogPost | null>(null);
+  const [isLiked, setIsLiked] = useState(false); // State để lưu trạng thái tim
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
 
@@ -59,9 +60,27 @@ const BlogPost = () => {
 
     try {
       await axios.post(`/api/blogs/${id}/like`);
-      fetchPost();
+      // fetchPost(); XOA DONG NAY
+
+      setIsLiked((prev) => !prev);
+
+      setPost((prev) => {
+        if (!prev) return null;
+
+        const adjustment = isLiked ? -1 : 1;
+
+        const newLikesLength = prev.likes.length + adjustment;
+
+        return {
+          ...prev,
+          likes: Array(newLikesLength).fill("updated_locally")
+        };
+      });
     } catch (error) {
+      console.error(error);
       toast.error('Có lỗi xảy ra');
+
+      setIsLiked((prev) => !prev);
     }
   };
 
@@ -101,7 +120,7 @@ const BlogPost = () => {
     );
   }
 
-  const isLiked = user && post.likes.includes(user.id);
+  // const isLiked = user && post.likes.includes(user.id); XOA DONG NAY
 
   return (
     <div className="container mx-auto px-4 py-8">
