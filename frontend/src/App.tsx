@@ -29,7 +29,8 @@ const Messages = lazy(() => import('./pages/Messages'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const About = lazy(() => import('./pages/About'));
 const Terms = lazy(() => import('./pages/Terms'));
-
+const Privacy = lazy(() => import('./pages/Privacy'));
+const FAQ = lazy(() => import('./pages/FAQ'));
 
 // Loading component
 const LoadingSpinner = () => (
@@ -72,6 +73,16 @@ function App() {
                 <Route path="/terms" element={
                   <ProtectedRoute>
                     <Terms />
+                  </ProtectedRoute>
+                } />
+                <Route path="/privacy" element={
+                  <ProtectedRoute>
+                    <Privacy />
+                  </ProtectedRoute>
+                } />
+                <Route path="/faq" element={
+                  <ProtectedRoute>
+                    <FAQ />
                   </ProtectedRoute>
                 } />
                 <Route path="/create-listing" element={

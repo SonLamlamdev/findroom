@@ -100,7 +100,6 @@ const About = () => {
               </Link>
             </div>
           </div>
-
         </div>
       </div>
     </div>
