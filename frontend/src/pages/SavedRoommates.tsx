@@ -5,6 +5,7 @@ import { FiHeart, FiUser, FiMessageCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { getAvatarUrl } from '../utils/imageHelper';
+import { useTranslation } from 'react-i18next';
 
 interface SavedRoommate {
   _id: string;
@@ -31,6 +32,7 @@ interface SavedRoommate {
 }
 
 const SavedRoommates = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [roommates, setRoommates] = useState<SavedRoommate[]>([]);
@@ -49,7 +51,7 @@ const SavedRoommates = () => {
       setRoommates(response.data.roommates);
     } catch (error) {
       console.error('Failed to fetch saved roommates:', error);
-      toast.error('Không thể tải danh sách');
+      toast.error(t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -59,10 +61,10 @@ const SavedRoommates = () => {
     try {
       await axios.post(`/api/roommates/save/${roommateId}`);
       setRoommates(roommates.filter(rm => rm._id !== roommateId));
-      toast.success('Đã xóa khỏi danh sách');
+      toast.success(t('common.success'));
     } catch (error) {
       console.error('Failed to unsave roommate:', error);
-      toast.error('Không thể xóa');
+      toast.error(t('common.error'));
     }
   };
 
@@ -91,9 +93,9 @@ const SavedRoommates = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Đã lưu ghép trọ</h1>
+          <h1 className="text-3xl font-bold mb-2">{t('roommate.savedTitle')}</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Danh sách những người bạn đã lưu để tìm bạn cùng phòng
+            {t('roommate.savedSubtitle')}
           </p>
         </div>
 
@@ -101,10 +103,10 @@ const SavedRoommates = () => {
           <div className="card p-12 text-center">
             <FiHeart size={64} className="mx-auto text-gray-400 mb-4" />
             <p className="text-gray-600 dark:text-gray-400 text-lg">
-              Bạn chưa lưu ai vào danh sách. Hãy tìm bạn cùng phòng và lưu những người phù hợp!
+              {t('roommate.emptySaved')}
             </p>
             <a href="/roommate-finder" className="btn-primary inline-block mt-4">
-              Tìm bạn cùng phòng
+              {t('roommate.findButton')}
             </a>
           </div>
         ) : (
@@ -136,11 +138,11 @@ const SavedRoommates = () => {
                   {/* Budget */}
                   {roommate.roommateProfile.budget && (roommate.roommateProfile.budget.min > 0 || roommate.roommateProfile.budget.max > 0) && (
                     <div className="mb-4">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Ngân sách:</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('roommate.profile.budget')}:</p>
                       <p className="font-semibold text-primary-600">
-                        {roommate.roommateProfile.budget.min > 0 ? formatPrice(roommate.roommateProfile.budget.min) : 'Không giới hạn'} 
+                        {roommate.roommateProfile.budget.min > 0 ? formatPrice(roommate.roommateProfile.budget.min) : t('roommate.profile.unlimited')} 
                         {' - '}
-                        {roommate.roommateProfile.budget.max > 0 ? formatPrice(roommate.roommateProfile.budget.max) : 'Không giới hạn'}
+                        {roommate.roommateProfile.budget.max > 0 ? formatPrice(roommate.roommateProfile.budget.max) : t('roommate.profile.unlimited')}
                       </p>
                     </div>
                   )}
@@ -148,7 +150,7 @@ const SavedRoommates = () => {
                   {/* Interests */}
                   {roommate.roommateProfile.interests && roommate.roommateProfile.interests.length > 0 && (
                     <div className="mb-4">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Sở thích:</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('roommate.profile.interests')}:</p>
                       <div className="flex flex-wrap gap-2">
                         {roommate.roommateProfile.interests.slice(0, 3).map((interest, index) => (
                           <span
@@ -168,19 +170,19 @@ const SavedRoommates = () => {
                       onClick={() => setSelectedProfile(roommate)}
                       className="flex-1 btn-primary text-sm"
                     >
-                      Xem hồ sơ
+                      {t('roommate.profile.viewProfile')}
                     </button>
                     <button 
                       onClick={() => handleContact(roommate._id)}
                       className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                      title="Liên hệ"
+                      title={t('roommate.profile.contact')}
                     >
                       <FiMessageCircle />
                     </button>
                     <button 
                       onClick={() => handleUnsave(roommate._id)}
                       className="p-2 border border-red-300 dark:border-red-600 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30"
-                      title="Xóa khỏi danh sách"
+                      title={t('roommate.profile.unsave')}
                     >
                       <FiHeart className="fill-current" />
                     </button>
@@ -198,7 +200,7 @@ const SavedRoommates = () => {
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">Hồ sơ {selectedProfile.name}</h2>
+                <h2 className="text-2xl font-bold">{t('roommate.profile.viewProfile')}</h2>
                 <button
                   onClick={() => setSelectedProfile(null)}
                   className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
@@ -232,7 +234,7 @@ const SavedRoommates = () => {
                 {/* Bio */}
                 {selectedProfile.roommateProfile.bio && (
                   <div>
-                    <h4 className="font-bold mb-2">Giới thiệu</h4>
+                    <h4 className="font-bold mb-2">{t('roommate.profile.intro')}</h4>
                     <p className="text-gray-700 dark:text-gray-300">{selectedProfile.roommateProfile.bio}</p>
                   </div>
                 )}
@@ -240,11 +242,11 @@ const SavedRoommates = () => {
                 {/* Budget */}
                 {selectedProfile.roommateProfile.budget && (selectedProfile.roommateProfile.budget.min > 0 || selectedProfile.roommateProfile.budget.max > 0) && (
                   <div>
-                    <h4 className="font-bold mb-2">Ngân sách</h4>
+                    <h4 className="font-bold mb-2">{t('roommate.profile.budget')}</h4>
                     <p className="text-primary-600 font-semibold">
-                      {selectedProfile.roommateProfile.budget.min > 0 ? formatPrice(selectedProfile.roommateProfile.budget.min) : 'Không giới hạn'} 
+                      {selectedProfile.roommateProfile.budget.min > 0 ? formatPrice(selectedProfile.roommateProfile.budget.min) : t('roommate.profile.unlimited')} 
                       {' - '}
-                      {selectedProfile.roommateProfile.budget.max > 0 ? formatPrice(selectedProfile.roommateProfile.budget.max) : 'Không giới hạn'}
+                      {selectedProfile.roommateProfile.budget.max > 0 ? formatPrice(selectedProfile.roommateProfile.budget.max) : t('roommate.profile.unlimited')}
                     </p>
                   </div>
                 )}
@@ -252,7 +254,7 @@ const SavedRoommates = () => {
                 {/* Interests */}
                 {selectedProfile.roommateProfile.interests && selectedProfile.roommateProfile.interests.length > 0 && (
                   <div>
-                    <h4 className="font-bold mb-2">Sở thích</h4>
+                    <h4 className="font-bold mb-2">{t('roommate.profile.interests')}</h4>
                     <div className="flex flex-wrap gap-2">
                       {selectedProfile.roommateProfile.interests.map((interest, index) => (
                         <span
@@ -269,29 +271,29 @@ const SavedRoommates = () => {
                 {/* Habits */}
                 {selectedProfile.roommateProfile.habits && (
                   <div>
-                    <h4 className="font-bold mb-2">Thói quen</h4>
+                    <h4 className="font-bold mb-2">{t('roommate.profile.habits')}</h4>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-600 dark:text-gray-400">Giờ ngủ:</span>
+                        <span className="text-gray-600 dark:text-gray-400">{t('roommate.profile.habitLabels.sleep')}:</span>
                         <span className="ml-2 font-medium">
-                          {selectedProfile.roommateProfile.habits.sleepSchedule === 'early' ? 'Sớm' :
-                           selectedProfile.roommateProfile.habits.sleepSchedule === 'late' ? 'Muộn' : 'Linh hoạt'}
+                          {selectedProfile.roommateProfile.habits.sleepSchedule === 'early' ? t('roommate.profile.habitLabels.early') :
+                           selectedProfile.roommateProfile.habits.sleepSchedule === 'late' ? t('roommate.profile.habitLabels.late') : t('roommate.profile.habitLabels.flexible')}
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-600 dark:text-gray-400">Độ sạch sẽ:</span>
+                        <span className="text-gray-600 dark:text-gray-400">{t('roommate.profile.habitLabels.clean')}:</span>
                         <span className="ml-2 font-medium">{selectedProfile.roommateProfile.habits.cleanliness}/5</span>
                       </div>
                       <div>
-                        <span className="text-gray-600 dark:text-gray-400">Tiếng ồn:</span>
+                        <span className="text-gray-600 dark:text-gray-400">{t('roommate.profile.habitLabels.noise')}:</span>
                         <span className="ml-2 font-medium">
-                          {selectedProfile.roommateProfile.habits.noise === 'quiet' ? 'Yên tĩnh' :
-                           selectedProfile.roommateProfile.habits.noise === 'moderate' ? 'Vừa phải' : 'Ồn ào'}
+                          {selectedProfile.roommateProfile.habits.noise === 'quiet' ? t('roommate.profile.habitLabels.quiet') :
+                           selectedProfile.roommateProfile.habits.noise === 'moderate' ? t('roommate.profile.habitLabels.moderate') : t('roommate.profile.habitLabels.noisy')}
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-600 dark:text-gray-400">Hút thuốc:</span>
-                        <span className="ml-2 font-medium">{selectedProfile.roommateProfile.habits.smoking ? 'Có' : 'Không'}</span>
+                        <span className="text-gray-600 dark:text-gray-400">{t('roommate.profile.habitLabels.smoke')}:</span>
+                        <span className="ml-2 font-medium">{selectedProfile.roommateProfile.habits.smoking ? t('roommate.profile.habitLabels.yes') : t('roommate.profile.habitLabels.no')}</span>
                       </div>
                     </div>
                   </div>
@@ -302,7 +304,7 @@ const SavedRoommates = () => {
                     onClick={() => setSelectedProfile(null)}
                     className="flex-1 btn-secondary"
                   >
-                    Đóng
+                    {t('common.cancel')}
                   </button>
                   <button 
                     onClick={() => {
@@ -312,7 +314,7 @@ const SavedRoommates = () => {
                     className="flex-1 btn-primary flex items-center justify-center gap-2"
                   >
                     <FiMessageCircle />
-                    Liên hệ
+                    {t('roommate.profile.contact')}
                   </button>
                 </div>
               </div>
@@ -325,4 +327,3 @@ const SavedRoommates = () => {
 };
 
 export default SavedRoommates;
-

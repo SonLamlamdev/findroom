@@ -5,6 +5,7 @@ import { FiHeart, FiUser, FiMessageCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { getAvatarUrl } from '../utils/imageHelper';
+import { useTranslation } from 'react-i18next';
 
 interface RoommateMatch {
   user: {
@@ -25,6 +26,7 @@ interface RoommateMatch {
 }
 
 const RoommateFinder = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [matches, setMatches] = useState<RoommateMatch[]>([]);
@@ -48,7 +50,7 @@ const RoommateFinder = () => {
       if (error.response?.status === 400) {
         setShowProfileSetup(true);
       } else {
-        toast.error('Không thể tải danh sách gợi ý');
+        toast.error(t('common.error'));
       }
     } finally {
       setLoading(false);
@@ -70,19 +72,18 @@ const RoommateFinder = () => {
       const response = await axios.post(`/api/roommates/save/${roommateId}`);
       if (response.data.saved) {
         setSavedRoommateIds([...savedRoommateIds, roommateId]);
-        toast.success('Đã thêm vào danh sách');
+        toast.success(t('common.success'));
       } else {
         setSavedRoommateIds(savedRoommateIds.filter(id => id !== roommateId));
-        toast.success('Đã xóa khỏi danh sách');
+        toast.success(t('common.success'));
       }
     } catch (error) {
       console.error('Failed to save roommate:', error);
-      toast.error('Không thể lưu');
+      toast.error(t('common.error'));
     }
   };
 
   const handleContact = (roommateId: string) => {
-    // Chuyển đến trang messages với recipientId
     navigate(`/messages/${roommateId}`);
   };
 
@@ -110,9 +111,9 @@ const RoommateFinder = () => {
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
-        <h2 className="text-2xl font-bold mb-4">Đăng nhập để tìm bạn cùng phòng</h2>
+        <h2 className="text-2xl font-bold mb-4">{t('roommate.loginTitle')}</h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Bạn cần đăng nhập để sử dụng tính năng này
+          {t('roommate.loginSubtitle')}
         </p>
       </div>
     );
@@ -130,12 +131,12 @@ const RoommateFinder = () => {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto card p-8">
-          <h2 className="text-2xl font-bold mb-4">Hoàn thiện hồ sơ tìm bạn cùng phòng</h2>
+          <h2 className="text-2xl font-bold mb-4">{t('roommate.setupProfileTitle')}</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Vui lòng hoàn thiện hồ sơ trong phần Cài đặt để sử dụng tính năng tìm bạn cùng phòng.
+            {t('roommate.setupProfileSubtitle')}
           </p>
           <a href="/profile" className="btn-primary inline-block">
-            Đi tới cài đặt hồ sơ
+            {t('roommate.goToProfile')}
           </a>
         </div>
       </div>
@@ -146,16 +147,16 @@ const RoommateFinder = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Tìm bạn cùng phòng</h1>
+          <h1 className="text-3xl font-bold mb-2">{t('roommate.title')}</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Dựa trên thói quen, sở thích và ngân sách của bạn
+            {t('roommate.subtitle')}
           </p>
         </div>
 
         {matches.length === 0 ? (
           <div className="card p-12 text-center">
             <p className="text-gray-600 dark:text-gray-400 text-lg">
-              Chưa tìm thấy bạn cùng phòng phù hợp. Hãy thử cập nhật hồ sơ của bạn!
+              {t('roommate.empty')}
             </p>
           </div>
         ) : (
@@ -194,11 +195,11 @@ const RoommateFinder = () => {
                   {/* Budget */}
                   {match.user.budget && (match.user.budget.min > 0 || match.user.budget.max > 0) && (
                     <div className="mb-4">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Ngân sách:</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('roommate.profile.budget')}:</p>
                       <p className="font-semibold text-primary-600">
-                        {match.user.budget.min > 0 ? formatPrice(match.user.budget.min) : 'Không giới hạn'} 
+                        {match.user.budget.min > 0 ? formatPrice(match.user.budget.min) : t('roommate.profile.unlimited')} 
                         {' - '}
-                        {match.user.budget.max > 0 ? formatPrice(match.user.budget.max) : 'Không giới hạn'}
+                        {match.user.budget.max > 0 ? formatPrice(match.user.budget.max) : t('roommate.profile.unlimited')}
                       </p>
                     </div>
                   )}
@@ -206,7 +207,7 @@ const RoommateFinder = () => {
                   {/* Interests */}
                   {match.user.interests && match.user.interests.length > 0 && (
                     <div className="mb-4">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Sở thích:</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('roommate.profile.interests')}:</p>
                       <div className="flex flex-wrap gap-2">
                         {match.user.interests.slice(0, 3).map((interest, index) => (
                           <span
@@ -223,7 +224,7 @@ const RoommateFinder = () => {
                   {/* Match Reasons */}
                   {match.matchReasons.length > 0 && (
                     <div className="mb-4">
-                      <p className="text-sm font-medium mb-2">Lý do phù hợp:</p>
+                      <p className="text-sm font-medium mb-2">{t('roommate.profile.reasons')}:</p>
                       <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                         {match.matchReasons.slice(0, 2).map((reason, index) => (
                           <li key={index}>• {reason}</li>
@@ -238,7 +239,7 @@ const RoommateFinder = () => {
                       onClick={() => setSelectedProfile(match)}
                       className="flex-1 btn-primary text-sm"
                     >
-                      Xem hồ sơ
+                      {t('roommate.profile.viewProfile')}
                     </button>
                     <button 
                       onClick={() => handleSaveRoommate(match.user.id)}
@@ -247,14 +248,11 @@ const RoommateFinder = () => {
                           ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-600'
                           : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
-                      title={savedRoommateIds.includes(match.user.id) ? 'Đã lưu' : 'Lưu vào danh sách'}
+                      title={savedRoommateIds.includes(match.user.id) ? t('roommate.profile.saved') : t('roommate.profile.save')}
                     >
                       <FiHeart className={savedRoommateIds.includes(match.user.id) ? 'fill-current' : ''} />
                     </button>
                   </div>
-                  {savedRoommateIds.includes(match.user.id) && (
-                    <p className="text-xs text-red-600 mt-1 text-center">Đã thêm vào danh sách</p>
-                  )}
                 </div>
               </div>
             ))}
@@ -268,7 +266,7 @@ const RoommateFinder = () => {
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">Hồ sơ {selectedProfile.user.name}</h2>
+                <h2 className="text-2xl font-bold">{t('roommate.profile.viewProfile')}</h2>
                 <button
                   onClick={() => setSelectedProfile(null)}
                   className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
@@ -297,7 +295,7 @@ const RoommateFinder = () => {
                         ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                     }`}>
-                      Độ phù hợp: {selectedProfile.compatibilityScore}%
+                      {t('roommate.profile.match')}: {selectedProfile.compatibilityScore}%
                     </div>
                   </div>
                 </div>
@@ -305,7 +303,7 @@ const RoommateFinder = () => {
                 {/* Bio */}
                 {selectedProfile.user.bio && (
                   <div>
-                    <h4 className="font-bold mb-2">Giới thiệu</h4>
+                    <h4 className="font-bold mb-2">{t('roommate.profile.intro')}</h4>
                     <p className="text-gray-700 dark:text-gray-300">{selectedProfile.user.bio}</p>
                   </div>
                 )}
@@ -313,11 +311,11 @@ const RoommateFinder = () => {
                 {/* Budget */}
                 {selectedProfile.user.budget && (selectedProfile.user.budget.min > 0 || selectedProfile.user.budget.max > 0) && (
                   <div>
-                    <h4 className="font-bold mb-2">Ngân sách</h4>
+                    <h4 className="font-bold mb-2">{t('roommate.profile.budget')}</h4>
                     <p className="text-primary-600 font-semibold">
-                      {selectedProfile.user.budget.min > 0 ? formatPrice(selectedProfile.user.budget.min) : 'Không giới hạn'} 
+                      {selectedProfile.user.budget.min > 0 ? formatPrice(selectedProfile.user.budget.min) : t('roommate.profile.unlimited')} 
                       {' - '}
-                      {selectedProfile.user.budget.max > 0 ? formatPrice(selectedProfile.user.budget.max) : 'Không giới hạn'}
+                      {selectedProfile.user.budget.max > 0 ? formatPrice(selectedProfile.user.budget.max) : t('roommate.profile.unlimited')}
                     </p>
                   </div>
                 )}
@@ -325,7 +323,7 @@ const RoommateFinder = () => {
                 {/* Interests */}
                 {selectedProfile.user.interests && selectedProfile.user.interests.length > 0 && (
                   <div>
-                    <h4 className="font-bold mb-2">Sở thích</h4>
+                    <h4 className="font-bold mb-2">{t('roommate.profile.interests')}</h4>
                     <div className="flex flex-wrap gap-2">
                       {selectedProfile.user.interests.map((interest, index) => (
                         <span
@@ -342,7 +340,7 @@ const RoommateFinder = () => {
                 {/* Match Reasons */}
                 {selectedProfile.matchReasons.length > 0 && (
                   <div>
-                    <h4 className="font-bold mb-2">Lý do phù hợp</h4>
+                    <h4 className="font-bold mb-2">{t('roommate.profile.reasons')}</h4>
                     <ul className="space-y-1">
                       {selectedProfile.matchReasons.map((reason, index) => (
                         <li key={index} className="text-gray-700 dark:text-gray-300">• {reason}</li>
@@ -356,7 +354,7 @@ const RoommateFinder = () => {
                     onClick={() => setSelectedProfile(null)}
                     className="flex-1 btn-secondary"
                   >
-                    Đóng
+                    {t('common.cancel')}
                   </button>
                   <button 
                     onClick={() => {
@@ -366,7 +364,7 @@ const RoommateFinder = () => {
                     className="flex-1 btn-primary flex items-center justify-center gap-2"
                   >
                     <FiMessageCircle />
-                    Liên hệ
+                    {t('roommate.profile.contact')}
                   </button>
                 </div>
               </div>
@@ -379,11 +377,3 @@ const RoommateFinder = () => {
 };
 
 export default RoommateFinder;
-
-
-
-
-
-
-
-

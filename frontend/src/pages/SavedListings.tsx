@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from '../config/axios';
 import { FiMapPin, FiHome } from 'react-icons/fi';
 import { getImageUrl } from '../utils/imageHelper';
+import { useTranslation } from 'react-i18next';
 
 interface Listing {
   _id: string;
@@ -20,6 +21,7 @@ interface Listing {
 }
 
 const SavedListings = () => {
+  const { t } = useTranslation();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -55,15 +57,15 @@ const SavedListings = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Phòng đã lưu</h1>
+      <h1 className="text-3xl font-bold mb-8">{t('saved.title')}</h1>
 
       {listings.length === 0 ? (
         <div className="card p-12 text-center">
           <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">
-            Bạn chưa lưu phòng nào
+            {t('saved.empty')}
           </p>
           <Link to="/listings" className="btn-primary inline-block">
-            Khám phá phòng trọ
+            {t('saved.explore')}
           </Link>
         </div>
       ) : (
@@ -116,11 +118,3 @@ const SavedListings = () => {
 };
 
 export default SavedListings;
-
-
-
-
-
-
-
-

@@ -186,7 +186,7 @@ const Listings = () => {
             <option value="price">{t('listings.sort.priceLowHigh')}</option>
             <option value="-price">{t('listings.sort.priceHighLow')}</option>
             <option value="rating">{t('listings.sort.rating')}</option>
-            <option value="views">Nhiều lượt xem</option>
+            <option value="views">{t('listings.sort.view')}</option>
           </select>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { FiMapPin, FiHome, FiStar } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { getImageUrl } from '../utils/imageHelper';
+import { useTranslation } from 'react-i18next';
 
 interface Listing {
   _id: string;
@@ -27,6 +28,7 @@ interface Listing {
 }
 
 const StayedListings = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,7 @@ const StayedListings = () => {
       setListings(response.data.listings);
     } catch (error) {
       console.error('Failed to fetch stayed listings:', error);
-      toast.error('Không thể tải danh sách phòng đã ở');
+      toast.error(t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -69,10 +71,10 @@ const StayedListings = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="card p-12 text-center">
           <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">
-            Vui lòng đăng nhập để xem phòng đã ở
+            {t('stayed.loginToView')}
           </p>
           <Link to="/login" className="btn-primary inline-block">
-            Đăng nhập
+            {t('stayed.login')}
           </Link>
         </div>
       </div>
@@ -81,18 +83,18 @@ const StayedListings = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Phòng đã từng ở</h1>
+      <h1 className="text-3xl font-bold mb-8">{t('stayed.title')}</h1>
 
       {listings.length === 0 ? (
         <div className="card p-12 text-center">
           <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">
-            Bạn chưa đánh dấu phòng nào là đã từng ở
+            {t('stayed.empty')}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
-            Đánh dấu phòng là "đã ở" để có thể đánh giá và bình luận về phòng đó
+            {t('stayed.hint')}
           </p>
           <Link to="/listings" className="btn-primary inline-block">
-            Khám phá phòng trọ
+            {t('stayed.explore')}
           </Link>
         </div>
       ) : (
@@ -145,12 +147,12 @@ const StayedListings = () => {
                   <div className="flex items-center gap-1 text-yellow-500">
                     <FiStar className="fill-current" size={16} />
                     <span className="text-sm font-medium">
-                      {listing.rating.average.toFixed(1)} ({listing.rating.count} đánh giá)
+                      {listing.rating.average.toFixed(1)} ({listing.rating.count} {t('dashboard.stats.ratingCount')})
                     </span>
                   </div>
                 ) : (
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Chưa có đánh giá
+                    {t('stayed.noRating')}
                   </div>
                 )}
               </div>
@@ -163,4 +165,3 @@ const StayedListings = () => {
 };
 
 export default StayedListings;
-

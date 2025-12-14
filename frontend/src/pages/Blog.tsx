@@ -4,6 +4,7 @@ import axios from '../config/axios';
 import { FiHeart, FiMessageCircle, FiEye, FiPlus } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { getImageUrl, getAvatarUrl } from '../utils/imageHelper';
+import { useTranslation } from 'react-i18next'; // Import Hook
 
 interface BlogPost {
   _id: string;
@@ -25,6 +26,7 @@ interface BlogPost {
 }
 
 const Blog = () => {
+  const { t } = useTranslation(); // Initialize
   const { user } = useAuth();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,13 +36,14 @@ const Blog = () => {
   const [sortBy, setSortBy] = useState('-createdAt');
   const [allTags, setAllTags] = useState<string[]>([]);
 
+  // Updated categories with translation keys
   const categories = [
-    { value: '', label: 'Tất cả' },
-    { value: 'tips', label: 'Mẹo hay' },
-    { value: 'experience', label: 'Kinh nghiệm' },
-    { value: 'checklist', label: 'Checklist xem phòng' },
-    { value: 'scam-report', label: 'Cảnh báo lừa đảo' },
-    { value: 'discussion', label: 'Thảo luận' }
+    { value: '', label: t('blog.all') },
+    { value: 'tips', label: t('blog.categories.tips') },
+    { value: 'experience', label: t('blog.categories.experience') },
+    { value: 'checklist', label: t('blog.categories.checklist') },
+    { value: 'scam-report', label: t('blog.categories.scamReport') },
+    { value: 'discussion', label: t('blog.categories.discussion') }
   ];
 
   useEffect(() => {
@@ -93,24 +96,33 @@ const Blog = () => {
   };
 
   const getCategoryLabel = (category: string) => {
-    const cat = categories.find(c => c.value === category);
-    return cat?.label || category;
+    // Map backend category value to translation key
+    const keyMap: Record<string, string> = {
+      'tips': 'tips',
+      'experience': 'experience',
+      'checklist': 'checklist',
+      'scam-report': 'scamReport',
+      'discussion': 'discussion'
+    };
+    
+    // Return translated string
+    return keyMap[category] ? t(`blog.categories.${keyMap[category]}`) : category;
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Blog & Cộng đồng</h1>
+          <h1 className="text-3xl font-bold mb-2">{t('blog.title')}</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Chia sẻ kinh nghiệm, mẹo hay và cảnh báo lừa đảo
+            {t('blog.subtitle')}
           </p>
         </div>
         
         {user && (
           <Link to="/create-blog" className="btn-primary flex items-center">
             <FiPlus className="mr-2" />
-            Viết bài
+            {t('blog.createButton')}
           </Link>
         )}
       </div>
@@ -120,7 +132,7 @@ const Blog = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <input
             type="text"
-            placeholder="Tìm kiếm bài viết..."
+            placeholder={t('blog.searchPlaceholder')}
             className="input md:col-span-2"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -131,14 +143,14 @@ const Blog = () => {
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
           >
-            <option value="-createdAt">Mới nhất</option>
-            <option value="createdAt">Cũ nhất</option>
-            <option value="likes">Nhiều like nhất</option>
-            <option value="views">Nhiều lượt xem nhất</option>
-            <option value="rating">Đánh giá cao nhất</option>
+            <option value="-createdAt">{t('listings.sort.newest')}</option>
+            <option value="createdAt">{t('listings.sort.newest').replace('Mới', 'Cũ').replace('Newest', 'Oldest')}</option>
+            <option value="likes">Like</option>
+            <option value="views">View</option>
+            <option value="rating">{t('listings.sort.rating')}</option>
           </select>
           <button onClick={fetchPosts} className="btn-primary">
-            Tìm kiếm
+            {t('common.search')}
           </button>
         </div>
 
@@ -162,7 +174,7 @@ const Blog = () => {
         {/* Tags Filter */}
         {allTags.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400 self-center mr-2">Tags:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400 self-center mr-2">{t('blog.tags')}</span>
             <button
               onClick={() => setSelectedTag('')}
               className={`px-3 py-1 rounded-full text-sm transition-all ${
@@ -171,7 +183,7 @@ const Blog = () => {
                   : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
-              Tất cả
+              {t('blog.all')}
             </button>
             {allTags.map((tag) => (
               <button
@@ -284,7 +296,7 @@ const Blog = () => {
       {!loading && posts.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-600 dark:text-gray-400 text-lg">
-            Chưa có bài viết nào trong danh mục này
+            {t('blog.noPosts')}
           </p>
         </div>
       )}
@@ -293,11 +305,3 @@ const Blog = () => {
 };
 
 export default Blog;
-
-
-
-
-
-
-
-

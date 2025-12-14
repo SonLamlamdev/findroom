@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import axios from '../config/axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const Profile = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [profileData, setProfileData] = useState({
@@ -48,9 +50,9 @@ const Profile = () => {
     
     try {
       await axios.put('/api/users/profile', profileData);
-      toast.success('Đã cập nhật hồ sơ');
+      toast.success(t('profile.success'));
     } catch (error) {
-      toast.error('Không thể cập nhật hồ sơ');
+      toast.error(t('common.error'));
     }
   };
 
@@ -59,16 +61,16 @@ const Profile = () => {
     
     try {
       await axios.put('/api/users/roommate-profile', roommateProfile);
-      toast.success('Đã cập nhật hồ sơ tìm bạn cùng phòng');
+      toast.success(t('profile.success'));
     } catch (error) {
-      toast.error('Không thể cập nhật hồ sơ');
+      toast.error(t('common.error'));
     }
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Hồ sơ cá nhân</h1>
+        <h1 className="text-3xl font-bold mb-8">{t('profile.title')}</h1>
 
         {/* Tabs */}
         <div className="flex gap-4 mb-8 border-b border-gray-200 dark:border-gray-700">
@@ -80,7 +82,7 @@ const Profile = () => {
                 : 'text-gray-600 dark:text-gray-400'
             }`}
           >
-            Thông tin cơ bản
+            {t('profile.tabs.basic')}
           </button>
           <button
             onClick={() => setActiveTab('roommate')}
@@ -90,7 +92,7 @@ const Profile = () => {
                 : 'text-gray-600 dark:text-gray-400'
             }`}
           >
-            Hồ sơ tìm bạn cùng phòng
+            {t('profile.tabs.roommate')}
           </button>
         </div>
 
@@ -98,7 +100,7 @@ const Profile = () => {
         {activeTab === 'profile' && (
           <form onSubmit={handleProfileUpdate} className="card p-6 space-y-6">
             <div>
-              <label className="block text-sm font-medium mb-2">Họ và tên</label>
+              <label className="block text-sm font-medium mb-2">{t('profile.labels.name')}</label>
               <input
                 type="text"
                 className="input"
@@ -108,7 +110,7 @@ const Profile = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Email</label>
+              <label className="block text-sm font-medium mb-2">{t('profile.labels.email')}</label>
               <input
                 type="email"
                 className="input"
@@ -118,7 +120,7 @@ const Profile = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Số điện thoại</label>
+              <label className="block text-sm font-medium mb-2">{t('profile.labels.phone')}</label>
               <input
                 type="tel"
                 className="input"
@@ -128,21 +130,21 @@ const Profile = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Giới tính</label>
+              <label className="block text-sm font-medium mb-2">{t('profile.labels.gender')}</label>
               <select
                 className="input"
                 value={profileData.gender}
                 onChange={(e) => setProfileData({ ...profileData, gender: e.target.value })}
               >
-                <option value="">Không xác định</option>
-                <option value="male">Nam</option>
-                <option value="female">Nữ</option>
-                <option value="other">Khác</option>
+                <option value="">{t('profile.genders.unknown')}</option>
+                <option value="male">{t('profile.genders.male')}</option>
+                <option value="female">{t('profile.genders.female')}</option>
+                <option value="other">{t('profile.genders.other')}</option>
               </select>
             </div>
 
             <button type="submit" className="btn-primary">
-              Lưu thay đổi
+              {t('profile.buttons.save')}
             </button>
           </form>
         )}
@@ -161,13 +163,13 @@ const Profile = () => {
                     lookingForRoommate: e.target.checked
                   })}
                 />
-                <span className="font-medium">Tôi đang tìm bạn cùng phòng</span>
+                <span className="font-medium">{t('profile.labels.looking')}</span>
               </label>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Trường đại học</label>
+                <label className="block text-sm font-medium mb-2">{t('profile.labels.uni')}</label>
                 <input
                   type="text"
                   className="input"
@@ -180,7 +182,7 @@ const Profile = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Chuyên ngành</label>
+                <label className="block text-sm font-medium mb-2">{t('profile.labels.major')}</label>
                 <input
                   type="text"
                   className="input"
@@ -194,7 +196,7 @@ const Profile = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Giới thiệu bản thân</label>
+              <label className="block text-sm font-medium mb-2">{t('profile.labels.bio')}</label>
               <textarea
                 rows={4}
                 className="input"
@@ -203,13 +205,13 @@ const Profile = () => {
                   ...roommateProfile,
                   bio: e.target.value
                 })}
-                placeholder="Viết vài dòng về bản thân..."
+                placeholder={t('profile.labels.bioPlaceholder')}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Ngân sách tối thiểu (VNĐ/tháng)</label>
+                <label className="block text-sm font-medium mb-2">{t('profile.labels.minBudget')}</label>
                 <input
                   type="number"
                   className="input"
@@ -221,12 +223,12 @@ const Profile = () => {
                       budget: { ...roommateProfile.budget, min: value ? Number(value) : 0 }
                     });
                   }}
-                  placeholder="Nhập số tiền"
+                  placeholder={t('profile.labels.enterAmount')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Ngân sách tối đa (VNĐ/tháng)</label>
+                <label className="block text-sm font-medium mb-2">{t('profile.labels.maxBudget')}</label>
                 <input
                   type="number"
                   className="input"
@@ -238,13 +240,13 @@ const Profile = () => {
                       budget: { ...roommateProfile.budget, max: value ? Number(value) : 0 }
                     });
                   }}
-                  placeholder="Nhập số tiền"
+                  placeholder={t('profile.labels.enterAmount')}
                 />
               </div>
             </div>
 
             <button type="submit" className="btn-primary">
-              Lưu hồ sơ tìm bạn cùng phòng
+              {t('profile.buttons.saveRoommate')}
             </button>
           </form>
         )}
@@ -254,11 +256,3 @@ const Profile = () => {
 };
 
 export default Profile;
-
-
-
-
-
-
-
-

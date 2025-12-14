@@ -4,6 +4,7 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   vi: {
     translation: {
+      // ... keep your existing nav, footer, common ...
       nav: {
         home: 'Trang chủ',
         listings: 'Danh sách phòng',
@@ -69,8 +70,22 @@ const resources = {
           verifiedDesc: 'Hệ thống đánh giá và xác thực chủ trọ',
           community: 'Cộng đồng',
           communityDesc: 'Chia sẻ kinh nghiệm và mẹo sống trọ'
+        },
+        // --- NEW KEYS FOR HOME STATS & CTA ---
+        stats: {
+          rooms: "Phòng trọ",
+          landlords: "Chủ trọ",
+          students: "Sinh viên",
+          unis: "Trường ĐH"
+        },
+        cta: {
+          title: "Bắt đầu tìm kiếm phòng trọ ngay hôm nay",
+          subtitle: "Tham gia cộng đồng sinh viên tìm trọ lớn nhất Việt Nam",
+          viewListings: "Xem danh sách phòng",
+          viewMap: "Khám phá bản đồ"
         }
       },
+      // ... keep auth, listings, map, flood, create, listingDetail ...
       auth: {
         login: 'Đăng nhập',
         register: 'Đăng ký',
@@ -101,7 +116,8 @@ const resources = {
           newest: "Mới nhất",
           priceLowHigh: "Giá: Thấp đến Cao",
           priceHighLow: "Giá: Cao đến Thấp",
-          rating: "Đánh giá cao nhất"
+          rating: "Đánh giá cao nhất",
+          view: "Nhiều lượt xem nhất"
         },
         noResults: "Không tìm thấy phòng phù hợp."
       },
@@ -213,7 +229,6 @@ const resources = {
           success: "Đã đăng tin thành công! 🎉"
         }
       },
-      // --- NEW SECTION FOR LISTING DETAIL ---
       listingDetail: {
         notFound: "Không tìm thấy phòng",
         description: "Mô tả",
@@ -259,11 +274,243 @@ const resources = {
           noDate: "Vui lòng chọn ngày đã ở",
           markSuccess: "Đã đánh dấu phòng là đã ở"
         }
+      },
+      dashboard: {
+        title: "Bảng điều khiển Chủ trọ",
+        period: {
+          week: "7 ngày qua",
+          month: "30 ngày qua",
+          year: "Năm nay"
+        },
+        buttons: {
+          create: "Đăng tin mới"
+        },
+        stats: {
+          totalListings: "Tổng tin đăng",
+          activeListings: "đang hoạt động",
+          views: "Lượt xem",
+          saves: "Lượt lưu",
+          savesDesc: "Sinh viên quan tâm",
+          rating: "Đánh giá TB",
+          ratingCount: "đánh giá"
+        },
+        priceAnalysis: {
+          title: "So sánh giá với khu vực",
+          yourAvg: "Giá trung bình của bạn",
+          areaAvg: "Giá TB khu vực",
+          diff: "Chênh lệch",
+          high: "💡 Giá của bạn cao hơn trung bình khu vực. Hãy xem xét điều chỉnh để tăng tính cạnh tranh.",
+          low: "💡 Giá của bạn thấp hơn trung bình khu vực. Bạn có thể tăng giá để tối ưu doanh thu.",
+          ok: "✅ Giá của bạn phù hợp với thị trường."
+        },
+        keywords: {
+          title: "Từ khóa tìm kiếm phổ biến",
+          empty: "Chưa có dữ liệu từ khóa"
+        },
+        tips: {
+          title: "💡 Mẹo tăng hiệu quả",
+          l1: "• Đăng ảnh chất lượng cao và nhiều góc nhìn về phòng trọ",
+          l2: "• Cập nhật thông tin thường xuyên để tin luôn ở vị trí cao",
+          l3: "• Phản hồi nhanh chóng các tin nhắn và đánh giá của sinh viên",
+          l4: "• Xác thực tài khoản để nhận huy hiệu \"Chủ trọ uy tín\""
+        }
+      },
+      blog: {
+        title: "Blog & Cộng đồng",
+        subtitle: "Chia sẻ kinh nghiệm, mẹo hay và cảnh báo lừa đảo",
+        searchPlaceholder: "Tìm kiếm bài viết...",
+        createButton: "Viết bài",
+        all: "Tất cả",
+        tags: "Tags:",
+        noPosts: "Chưa có bài viết nào trong danh mục này",
+        categories: {
+          tips: "Mẹo hay",
+          experience: "Kinh nghiệm",
+          checklist: "Checklist xem phòng",
+          scamReport: "Cảnh báo lừa đảo",
+          discussion: "Thảo luận"
+        },
+        create: {
+          pageTitle: "Viết bài mới",
+          titleLabel: "Tiêu đề *",
+          titlePlaceholder: "Nhập tiêu đề bài viết...",
+          categoryLabel: "Danh mục *",
+          contentLabel: "Nội dung *",
+          contentPlaceholder: "Viết nội dung bài viết...",
+          tagsLabel: "Tags",
+          tagsPlaceholder: "Nhập tags, cách nhau bằng dấu phẩy (vd: sinh viên, trọ, mẹo hay)",
+          submit: "Đăng bài",
+          submitting: "Đang đăng...",
+          cancel: "Hủy",
+          success: "Đã đăng bài viết"
+        },
+        post: {
+          notFound: "Không tìm thấy bài viết",
+          comments: "Bình luận",
+          commentPlaceholder: "Viết bình luận...",
+          submitComment: "Gửi bình luận",
+          loginToComment: "Vui lòng đăng nhập",
+          noComments: "Chưa có bình luận nào",
+          successComment: "Đã thêm bình luận"
+        }
+      },
+      stayed: {
+        title: "Phòng đã từng ở",
+        empty: "Bạn chưa đánh dấu phòng nào là đã từng ở",
+        hint: "Đánh dấu phòng là \"đã ở\" để có thể đánh giá và bình luận về phòng đó",
+        explore: "Khám phá phòng trọ",
+        loginToView: "Vui lòng đăng nhập để xem phòng đã ở",
+        login: "Đăng nhập",
+        noRating: "Chưa có đánh giá"
+      },
+      saved: {
+        title: "Phòng đã lưu",
+        empty: "Bạn chưa lưu phòng nào",
+        explore: "Khám phá phòng trọ"
+      },
+      roommate: {
+        title: "Tìm bạn cùng phòng",
+        subtitle: "Dựa trên thói quen, sở thích và ngân sách của bạn",
+        savedTitle: "Đã lưu ghép trọ",
+        savedSubtitle: "Danh sách những người bạn đã lưu để tìm bạn cùng phòng",
+        empty: "Chưa tìm thấy bạn cùng phòng phù hợp. Hãy thử cập nhật hồ sơ của bạn!",
+        emptySaved: "Bạn chưa lưu ai vào danh sách. Hãy tìm bạn cùng phòng và lưu những người phù hợp!",
+        findButton: "Tìm bạn cùng phòng",
+        loginTitle: "Đăng nhập để tìm bạn cùng phòng",
+        loginSubtitle: "Bạn cần đăng nhập để sử dụng tính năng này",
+        setupProfileTitle: "Hoàn thiện hồ sơ tìm bạn cùng phòng",
+        setupProfileSubtitle: "Vui lòng hoàn thiện hồ sơ trong phần Cài đặt để sử dụng tính năng tìm bạn cùng phòng.",
+        goToProfile: "Đi tới cài đặt hồ sơ",
+        profile: {
+          budget: "Ngân sách",
+          interests: "Sở thích",
+          reasons: "Lý do phù hợp",
+          intro: "Giới thiệu",
+          habits: "Thói quen",
+          viewProfile: "Xem hồ sơ",
+          contact: "Liên hệ",
+          save: "Lưu vào danh sách",
+          unsave: "Xóa khỏi danh sách",
+          saved: "Đã lưu",
+          match: "Độ phù hợp",
+          unlimited: "Không giới hạn",
+          habitLabels: {
+            sleep: "Giờ ngủ",
+            clean: "Độ sạch sẽ",
+            noise: "Tiếng ồn",
+            smoke: "Hút thuốc",
+            early: "Sớm",
+            late: "Muộn",
+            flexible: "Linh hoạt",
+            quiet: "Yên tĩnh",
+            moderate: "Vừa phải",
+            noisy: "Ồn ào",
+            yes: "Có",
+            no: "Không"
+          }
+        }
+      },
+      profile: {
+        title: "Hồ sơ cá nhân",
+        tabs: {
+          basic: "Thông tin cơ bản",
+          roommate: "Hồ sơ tìm bạn cùng phòng"
+        },
+        labels: {
+          name: "Họ và tên",
+          email: "Email",
+          phone: "Số điện thoại",
+          gender: "Giới tính",
+          looking: "Tôi đang tìm bạn cùng phòng",
+          uni: "Trường đại học",
+          major: "Chuyên ngành",
+          bio: "Giới thiệu bản thân",
+          bioPlaceholder: "Viết vài dòng về bản thân...",
+          minBudget: "Ngân sách tối thiểu (VNĐ/tháng)",
+          maxBudget: "Ngân sách tối đa (VNĐ/tháng)",
+          enterAmount: "Nhập số tiền"
+        },
+        genders: {
+          unknown: "Không xác định",
+          male: "Nam",
+          female: "Nữ",
+          other: "Khác"
+        },
+        buttons: {
+          save: "Lưu thay đổi",
+          saveRoommate: "Lưu hồ sơ tìm bạn cùng phòng"
+        },
+        success: "Đã cập nhật hồ sơ"
+      },
+      messages: {
+        title: "Tin nhắn",
+        conversations: "Cuộc trò chuyện",
+        noConversations: "Chưa có cuộc trò chuyện nào",
+        roomCount: "phòng trọ",
+        noMessages: "Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!",
+        select: "Chọn một cuộc trò chuyện để bắt đầu",
+        placeholder: "Nhập tin nhắn...",
+        deleteConfirm: "Bạn có chắc chắn muốn xóa tin nhắn này?",
+        deleteSuccess: "Đã xóa tin nhắn",
+        createError: "Không thể tạo cuộc trò chuyện",
+        sendError: "Không thể gửi tin nhắn",
+        deleteError: "Không thể xóa tin nhắn"
+      },
+      // --- NEW: ADMIN PANEL ---
+      admin: {
+        noAccess: "Bạn không có quyền truy cập",
+        accessDeniedTitle: "Không có quyền truy cập",
+        accessDeniedDesc: "Chỉ quản trị viên mới có thể truy cập trang này.",
+        title: "Bảng quản trị",
+        stats: {
+          users: "Tổng người dùng",
+          listings: "Tổng bài đăng",
+          blogs: "Tổng blog",
+          banned: "Người dùng bị cấm"
+        },
+        tabs: {
+          users: "Người dùng",
+          listings: "Bài đăng",
+          blogs: "Blog",
+          annotations: "Chú thích bản đồ",
+          reports: "Báo cáo ngập lụt"
+        },
+        table: {
+          name: "Tên",
+          email: "Email",
+          role: "Vai trò",
+          status: "Trạng thái",
+          action: "Thao tác",
+          title: "Tiêu đề",
+          landlord: "Chủ trọ",
+          price: "Giá",
+          author: "Tác giả",
+          type: "Loại",
+          address: "Địa chỉ",
+          level: "Mức độ",
+          desc: "Mô tả",
+          reporter: "Người báo cáo"
+        },
+        status: {
+          banned: "Bị cấm",
+          active: "Hoạt động"
+        },
+        confirm: {
+          ban: "Bạn có chắc chắn muốn cấm người dùng này?",
+          delete: "Bạn có chắc chắn muốn xóa?"
+        },
+        actions: {
+          banSuccess: "Đã cấm người dùng",
+          unbanSuccess: "Đã bỏ cấm người dùng",
+          deleteSuccess: "Đã xóa thành công",
+          error: "Thao tác thất bại"
+        }
       }
     }
   },
   en: {
     translation: {
+      // ... keep your existing nav, footer, common ...
       nav: {
         home: 'Home',
         listings: 'Listings',
@@ -329,8 +576,22 @@ const resources = {
           verifiedDesc: 'Rating and verification system for landlords',
           community: 'Community',
           communityDesc: 'Share experiences and living tips'
+        },
+        // --- NEW KEYS FOR HOME STATS & CTA ---
+        stats: {
+          rooms: "Rooms",
+          landlords: "Landlords",
+          students: "Students",
+          unis: "Universities"
+        },
+        cta: {
+          title: "Start finding your room today",
+          subtitle: "Join the largest student accommodation community in Vietnam",
+          viewListings: "Browse Listings",
+          viewMap: "Explore Map"
         }
       },
+      // ... keep auth, listings, map, flood, create, listingDetail ...
       auth: {
         login: 'Login',
         register: 'Register',
@@ -361,7 +622,8 @@ const resources = {
           newest: "Newest",
           priceLowHigh: "Price: Low to High",
           priceHighLow: "Price: High to Low",
-          rating: "Highest Rated"
+          rating: "Highest Rated",
+          view: "Highest View"
         },
         noResults: "No suitable rooms found."
       },
@@ -473,7 +735,6 @@ const resources = {
           success: "Listing created successfully! 🎉"
         }
       },
-      // --- NEW SECTION FOR LISTING DETAIL ---
       listingDetail: {
         notFound: "Listing not found",
         description: "Description",
@@ -519,6 +780,237 @@ const resources = {
           noDate: "Please select a stay date",
           markSuccess: "Marked as stayed successfully"
         }
+      },
+      dashboard: {
+        title: "Landlord Dashboard",
+        period: {
+          week: "Last 7 days",
+          month: "Last 30 days",
+          year: "This year"
+        },
+        buttons: {
+          create: "Post New Listing"
+        },
+        stats: {
+          totalListings: "Total Listings",
+          activeListings: "active",
+          views: "Views",
+          saves: "Saves",
+          savesDesc: "Interested students",
+          rating: "Avg Rating",
+          ratingCount: "reviews"
+        },
+        priceAnalysis: {
+          title: "Price Comparison",
+          yourAvg: "Your Average Price",
+          areaAvg: "Area Average",
+          diff: "Difference",
+          high: "💡 Your price is higher than average. Consider adjusting to be competitive.",
+          low: "💡 Your price is lower than average. You could increase rent to optimize revenue.",
+          ok: "✅ Your pricing is competitive."
+        },
+        keywords: {
+          title: "Top Search Keywords",
+          empty: "No keyword data available"
+        },
+        tips: {
+          title: "💡 Tips for Success",
+          l1: "• Upload high-quality photos from multiple angles",
+          l2: "• Update listings regularly to stay on top",
+          l3: "• Respond quickly to messages and reviews",
+          l4: "• Verify your account to get the \"Trusted Landlord\" badge"
+        }
+      },
+      blog: {
+        title: "Blog & Community",
+        subtitle: "Share experiences, tips, and scam alerts",
+        searchPlaceholder: "Search posts...",
+        createButton: "Write Post",
+        all: "All",
+        tags: "Tags:",
+        noPosts: "No posts found in this category",
+        categories: {
+          tips: "Tips & Tricks",
+          experience: "Experience",
+          checklist: "Viewing Checklist",
+          scamReport: "Scam Alert",
+          discussion: "Discussion"
+        },
+        create: {
+          pageTitle: "Write New Post",
+          titleLabel: "Title *",
+          titlePlaceholder: "Enter post title...",
+          categoryLabel: "Category *",
+          contentLabel: "Content *",
+          contentPlaceholder: "Write your content...",
+          tagsLabel: "Tags",
+          tagsPlaceholder: "Enter tags, separated by commas (ex: student, rent, tips)",
+          submit: "Publish Post",
+          submitting: "Publishing...",
+          cancel: "Cancel",
+          success: "Post published successfully"
+        },
+        post: {
+          notFound: "Post not found",
+          comments: "Comments",
+          commentPlaceholder: "Write a comment...",
+          submitComment: "Post Comment",
+          loginToComment: "Please login to comment",
+          noComments: "No comments yet",
+          successComment: "Comment added"
+        }
+      },
+      stayed: {
+        title: "Stayed Listings",
+        empty: "You haven't marked any rooms as stayed yet",
+        hint: "Mark rooms as \"stayed\" to review and comment on them",
+        explore: "Explore Listings",
+        loginToView: "Please login to view stayed listings",
+        login: "Login",
+        noRating: "No ratings yet"
+      },
+      saved: {
+        title: "Saved Listings",
+        empty: "You haven't saved any listings yet",
+        explore: "Explore Listings"
+      },
+      roommate: {
+        title: "Find Roommate",
+        subtitle: "Based on your habits, interests, and budget",
+        savedTitle: "Saved Roommates",
+        savedSubtitle: "List of people you saved for roommate matching",
+        empty: "No suitable roommates found. Try updating your profile!",
+        emptySaved: "You haven't saved anyone yet. Find roommates and save the ones you like!",
+        findButton: "Find Roommates",
+        loginTitle: "Login to find roommates",
+        loginSubtitle: "You need to login to use this feature",
+        setupProfileTitle: "Complete your roommate profile",
+        setupProfileSubtitle: "Please complete your profile in Settings to use the roommate finder.",
+        goToProfile: "Go to Profile Settings",
+        profile: {
+          budget: "Budget",
+          interests: "Interests",
+          reasons: "Match Reasons",
+          intro: "Intro",
+          habits: "Habits",
+          viewProfile: "View Profile",
+          contact: "Contact",
+          save: "Save to list",
+          unsave: "Remove from list",
+          saved: "Saved",
+          match: "Match",
+          unlimited: "Unlimited",
+          habitLabels: {
+            sleep: "Sleep Schedule",
+            clean: "Cleanliness",
+            noise: "Noise Level",
+            smoke: "Smoking",
+            early: "Early",
+            late: "Late",
+            flexible: "Flexible",
+            quiet: "Quiet",
+            moderate: "Moderate",
+            noisy: "Noisy",
+            yes: "Yes",
+            no: "No"
+          }
+        }
+      },
+      profile: {
+        title: "Profile",
+        tabs: {
+          basic: "Basic Info",
+          roommate: "Roommate Profile"
+        },
+        labels: {
+          name: "Full Name",
+          email: "Email",
+          phone: "Phone Number",
+          gender: "Gender",
+          looking: "I am looking for a roommate",
+          uni: "University",
+          major: "Major",
+          bio: "Self Introduction",
+          bioPlaceholder: "Write a few lines about yourself...",
+          minBudget: "Min Budget (VND/month)",
+          maxBudget: "Max Budget (VND/month)",
+          enterAmount: "Enter amount"
+        },
+        genders: {
+          unknown: "Unknown",
+          male: "Male",
+          female: "Female",
+          other: "Other"
+        },
+        buttons: {
+          save: "Save Changes",
+          saveRoommate: "Save Roommate Profile"
+        },
+        success: "Profile updated successfully"
+      },
+      messages: {
+        title: "Messages",
+        conversations: "Conversations",
+        noConversations: "No conversations yet",
+        roomCount: "listings",
+        noMessages: "No messages yet. Start the conversation!",
+        select: "Select a conversation to start",
+        placeholder: "Type a message...",
+        deleteConfirm: "Are you sure you want to delete this message?",
+        deleteSuccess: "Message deleted",
+        createError: "Failed to create conversation",
+        sendError: "Failed to send message",
+        deleteError: "Failed to delete message"
+      },
+      // --- NEW: ADMIN PANEL ---
+      admin: {
+        noAccess: "Access Denied",
+        accessDeniedTitle: "Access Denied",
+        accessDeniedDesc: "Only administrators can access this page.",
+        title: "Admin Panel",
+        stats: {
+          users: "Total Users",
+          listings: "Total Listings",
+          blogs: "Total Blogs",
+          banned: "Banned Users"
+        },
+        tabs: {
+          users: "Users",
+          listings: "Listings",
+          blogs: "Blogs",
+          annotations: "Map Annotations",
+          reports: "Flood Reports"
+        },
+        table: {
+          name: "Name",
+          email: "Email",
+          role: "Role",
+          status: "Status",
+          action: "Actions",
+          title: "Title",
+          landlord: "Landlord",
+          price: "Price",
+          author: "Author",
+          type: "Type",
+          address: "Address",
+          level: "Level",
+          desc: "Description",
+          reporter: "Reporter"
+        },
+        status: {
+          banned: "Banned",
+          active: "Active"
+        },
+        confirm: {
+          ban: "Are you sure you want to ban this user?",
+          delete: "Are you sure you want to delete this?"
+        },
+        actions: {
+          banSuccess: "User banned",
+          unbanSuccess: "User unbanned",
+          deleteSuccess: "Deleted successfully",
+          error: "Action failed"
+        }
       }
     }
   }
@@ -528,13 +1020,13 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'vi', // FORCE DEFAULT TO VIETNAMESE
+    lng: 'vi',
     fallbackLng: 'vi',
     interpolation: {
       escapeValue: false
     },
     detection: {
-      order: ['localStorage'], // Only verify local storage
+      order: ['localStorage'],
       caches: ['localStorage'],
     }
   });

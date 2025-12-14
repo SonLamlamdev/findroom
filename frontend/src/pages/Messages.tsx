@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../utils/errorHandler';
 import { getAvatarUrl } from '../utils/imageHelper';
+import { useTranslation } from 'react-i18next';
 
 interface Conversation {
   _id: string;
@@ -21,6 +22,7 @@ interface Conversation {
     images: string[];
     price: number;
   };
+  allListings?: any[];
   lastMessage?: {
     content: string;
     createdAt: string;
@@ -42,6 +44,7 @@ interface Message {
 }
 
 const Messages = () => {
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { listingId, recipientId } = useParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -67,29 +70,25 @@ const Messages = () => {
 
   useEffect(() => {
     if (selectedConversation) {
-      setShouldAutoScroll(true); // Reset when conversation changes
+      setShouldAutoScroll(true);
       fetchMessages(selectedConversation._id);
       const interval = setInterval(() => {
         fetchMessages(selectedConversation._id);
-      }, 3000); // Poll every 3 seconds
+      }, 3000);
       return () => clearInterval(interval);
     }
   }, [selectedConversation]);
 
-  // Check if user is near bottom of messages
   const isNearBottom = () => {
     const container = messagesContainerRef.current;
     if (!container) return true;
-    
-    const threshold = 100; // pixels from bottom
+    const threshold = 100;
     const { scrollTop, scrollHeight, clientHeight } = container;
     return scrollHeight - scrollTop - clientHeight < threshold;
   };
 
   useEffect(() => {
-    // Only auto-scroll if user is near bottom or it's a new message from current user
     if (shouldAutoScroll && isNearBottom() && !isUserScrolling) {
-      // Use setTimeout to ensure DOM is updated
       setTimeout(() => {
         scrollToBottom();
       }, 100);
@@ -105,25 +104,21 @@ const Messages = () => {
     }
   };
 
-  // Handle scroll events
   const handleScroll = () => {
     if (messagesContainerRef.current) {
       const container = messagesContainerRef.current;
       const { scrollTop, scrollHeight, clientHeight } = container;
       const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
-      
       setIsUserScrolling(!isAtBottom);
       setShouldAutoScroll(isAtBottom);
     }
   };
 
-  // Prevent auto-scroll when input is focused
   const handleInputFocus = () => {
     setShouldAutoScroll(false);
   };
 
   const handleInputBlur = () => {
-    // Re-enable auto-scroll if near bottom
     if (isNearBottom()) {
       setShouldAutoScroll(true);
     }
@@ -133,24 +128,16 @@ const Messages = () => {
     try {
       const response = await axios.get('/api/messages/conversations');
       let conversations = response.data.conversations;
-      
-      // Backend now groups conversations by user (landlord/tenant) instead of by listing
-      // So all conversations with the same landlord are merged into one
-      // Just sort by last message time
       conversations = conversations.sort((a: Conversation, b: Conversation) => {
         const aTime = new Date(a.lastMessageAt || a.createdAt || 0).getTime();
         const bTime = new Date(b.lastMessageAt || b.createdAt || 0).getTime();
         return bTime - aTime;
       });
-      
       setConversations(conversations);
       
-      // Auto-select if recipientId provided
       if (recipientId) {
         let conv: Conversation | undefined;
-        
         if (listingId) {
-          // Find conversation with specific listing
           conv = conversations.find(
             (c: Conversation) => {
               const hasRecipient = c.participants.some(p => p._id === recipientId);
@@ -158,7 +145,6 @@ const Messages = () => {
             }
           );
         } else {
-          // Direct message without listing - find the first (should be only one)
           conv = conversations.find(
             (c: Conversation) => {
               const hasRecipient = c.participants.some(p => p._id === recipientId);
@@ -166,10 +152,7 @@ const Messages = () => {
             }
           );
         }
-        
-        if (conv) {
-          setSelectedConversation(conv);
-        }
+        if (conv) setSelectedConversation(conv);
       }
     } catch (error) {
       console.error('Failed to fetch conversations:', error);
@@ -188,7 +171,7 @@ const Messages = () => {
       fetchConversations();
     } catch (error: any) {
       console.error('Failed to create conversation:', error);
-      const errorMessage = getErrorMessage(error, 'Không thể tạo cuộc trò chuyện');
+      const errorMessage = getErrorMessage(error, t('messages.createError'));
       toast.error(errorMessage);
     }
   };
@@ -206,9 +189,8 @@ const Messages = () => {
     if (!newMessage.trim() || !selectedConversation) return;
 
     const messageContent = newMessage.trim();
-    setNewMessage(''); // Clear input immediately for better UX
+    setNewMessage('');
     
-    // Optimistically add message to UI
     const tempMessage: Message = {
       _id: `temp-${Date.now()}`,
       sender: {
@@ -221,39 +203,35 @@ const Messages = () => {
       read: false
     };
     setMessages(prev => [...prev, tempMessage]);
-    setShouldAutoScroll(true); // Force scroll to bottom for own messages
+    setShouldAutoScroll(true);
 
     try {
       const response = await axios.post(
         `/api/messages/conversations/${selectedConversation._id}/messages`,
         { content: messageContent }
       );
-      // Replace temp message with real one
       setMessages(prev => 
         prev.map(msg => msg._id === tempMessage._id ? response.data.message : msg)
       );
-      fetchConversations(); // Update last message
-      // Scroll to bottom after message is sent
+      fetchConversations();
       setTimeout(() => scrollToBottom(true), 100);
     } catch (error) {
       console.error('Failed to send message:', error);
-      toast.error('Không thể gửi tin nhắn');
-      // Remove temp message on error
+      toast.error(t('messages.sendError'));
       setMessages(prev => prev.filter(msg => msg._id !== tempMessage._id));
     }
   };
 
   const deleteMessage = async (messageId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa tin nhắn này?')) return;
+    if (!confirm(t('messages.deleteConfirm'))) return;
 
     try {
       await axios.delete(`/api/messages/messages/${messageId}`);
-      // Remove message from UI immediately
       setMessages(prev => prev.filter(msg => msg._id !== messageId));
-      toast.success('Đã xóa tin nhắn');
+      toast.success(t('messages.deleteSuccess'));
     } catch (error) {
       console.error('Failed to delete message:', error);
-      toast.error('Không thể xóa tin nhắn');
+      toast.error(t('messages.deleteError'));
     }
   };
 
@@ -271,19 +249,19 @@ const Messages = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <h1 className="text-3xl font-bold mb-6">Tin nhắn</h1>
+      <h1 className="text-3xl font-bold mb-6">{t('messages.title')}</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-200px)]">
         {/* Conversations List */}
         <div className="lg:col-span-1 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden flex flex-col">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-            <h2 className="font-semibold">Cuộc trò chuyện</h2>
+            <h2 className="font-semibold">{t('messages.conversations')}</h2>
           </div>
           <div className="flex-1 overflow-y-auto">
             {conversations.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
                 <FiMessageCircle size={48} className="mx-auto mb-2 opacity-50" />
-                <p>Chưa có cuộc trò chuyện nào</p>
+                <p>{t('messages.noConversations')}</p>
               </div>
             ) : (
               conversations.map((conversation) => {
@@ -316,7 +294,7 @@ const Messages = () => {
                         )}
                         {conversation.allListings && conversation.allListings.length > 1 && (
                           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                            {conversation.allListings.length} phòng trọ
+                            {conversation.allListings.length} {t('messages.roomCount')}
                           </p>
                         )}
                         {conversation.lastMessage && (
@@ -372,7 +350,7 @@ const Messages = () => {
               >
                 {messages.length === 0 ? (
                   <div className="text-center text-gray-500 py-8">
-                    <p>Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!</p>
+                    <p>{t('messages.noMessages')}</p>
                   </div>
                 ) : (
                   messages.map((message) => {
@@ -411,7 +389,7 @@ const Messages = () => {
                                   isOwn ? 'text-primary-100' : 'text-gray-500 dark:text-gray-400'
                                 }`}
                               >
-                                {new Date(message.createdAt).toLocaleTimeString('vi-VN', {
+                                {new Date(message.createdAt).toLocaleTimeString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', {
                                   hour: '2-digit',
                                   minute: '2-digit'
                                 })}
@@ -420,7 +398,7 @@ const Messages = () => {
                                 <button
                                   onClick={() => deleteMessage(message._id)}
                                   className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-primary-700 rounded"
-                                  title="Xóa tin nhắn"
+                                  title={t('common.delete')}
                                 >
                                   <FiTrash2 size={14} className="text-primary-100 hover:text-white" />
                                 </button>
@@ -460,7 +438,7 @@ const Messages = () => {
                     }}
                     onFocus={handleInputFocus}
                     onBlur={handleInputBlur}
-                    placeholder="Nhập tin nhắn..."
+                    placeholder={t('messages.placeholder')}
                     className="input flex-1 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     autoComplete="off"
                   />
@@ -478,7 +456,7 @@ const Messages = () => {
             <div className="flex-1 flex items-center justify-center text-gray-500">
               <div className="text-center">
                 <FiMessageCircle size={64} className="mx-auto mb-4 opacity-50" />
-                <p>Chọn một cuộc trò chuyện để bắt đầu</p>
+                <p>{t('messages.select')}</p>
               </div>
             </div>
           )}
@@ -489,4 +467,3 @@ const Messages = () => {
 };
 
 export default Messages;
-

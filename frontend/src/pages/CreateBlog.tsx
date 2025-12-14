@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../config/axios';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next'; // Import Hook
 
 const CreateBlog = () => {
+  const { t } = useTranslation(); // Initialize
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: '',
@@ -14,11 +16,11 @@ const CreateBlog = () => {
   const [loading, setLoading] = useState(false);
 
   const categories = [
-    { value: 'tips', label: 'Mẹo hay' },
-    { value: 'experience', label: 'Kinh nghiệm' },
-    { value: 'checklist', label: 'Checklist xem phòng' },
-    { value: 'scam-report', label: 'Cảnh báo lừa đảo' },
-    { value: 'discussion', label: 'Thảo luận' }
+    { value: 'tips', label: t('blog.categories.tips') },
+    { value: 'experience', label: t('blog.categories.experience') },
+    { value: 'checklist', label: t('blog.categories.checklist') },
+    { value: 'scam-report', label: t('blog.categories.scamReport') },
+    { value: 'discussion', label: t('blog.categories.discussion') }
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,10 +35,10 @@ const CreateBlog = () => {
         tags
       });
 
-      toast.success('Đã đăng bài viết');
+      toast.success(t('blog.create.success'));
       navigate(`/blog/${response.data.blog._id}`);
     } catch (error) {
-      toast.error('Không thể đăng bài viết');
+      toast.error(t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -45,23 +47,23 @@ const CreateBlog = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Viết bài mới</h1>
+        <h1 className="text-3xl font-bold mb-8">{t('blog.create.pageTitle')}</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium mb-2">Tiêu đề *</label>
+            <label className="block text-sm font-medium mb-2">{t('blog.create.titleLabel')}</label>
             <input
               type="text"
               required
               className="input"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Nhập tiêu đề bài viết..."
+              placeholder={t('blog.create.titlePlaceholder')}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Danh mục *</label>
+            <label className="block text-sm font-medium mb-2">{t('blog.create.categoryLabel')}</label>
             <select
               className="input"
               value={formData.category}
@@ -76,25 +78,25 @@ const CreateBlog = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Nội dung *</label>
+            <label className="block text-sm font-medium mb-2">{t('blog.create.contentLabel')}</label>
             <textarea
               required
               rows={15}
               className="input"
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              placeholder="Viết nội dung bài viết..."
+              placeholder={t('blog.create.contentPlaceholder')}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Tags</label>
+            <label className="block text-sm font-medium mb-2">{t('blog.create.tagsLabel')}</label>
             <input
               type="text"
               className="input"
               value={formData.tags}
               onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-              placeholder="Nhập tags, cách nhau bằng dấu phẩy (vd: sinh viên, trọ, mẹo hay)"
+              placeholder={t('blog.create.tagsPlaceholder')}
             />
           </div>
 
@@ -104,14 +106,14 @@ const CreateBlog = () => {
               disabled={loading}
               className="btn-primary disabled:opacity-50"
             >
-              {loading ? 'Đang đăng...' : 'Đăng bài'}
+              {loading ? t('blog.create.submitting') : t('blog.create.submit')}
             </button>
             <button
               type="button"
               onClick={() => navigate('/blog')}
               className="btn-secondary"
             >
-              Hủy
+              {t('blog.create.cancel')}
             </button>
           </div>
         </form>
@@ -121,11 +123,3 @@ const CreateBlog = () => {
 };
 
 export default CreateBlog;
-
-
-
-
-
-
-
-

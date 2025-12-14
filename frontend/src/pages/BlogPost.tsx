@@ -5,6 +5,7 @@ import { FiHeart, FiMessageCircle, FiEye } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { getImageUrl, getAvatarUrl } from '../utils/imageHelper';
+import { useTranslation } from 'react-i18next'; // Import Hook
 
 interface BlogPost {
   _id: string;
@@ -30,10 +31,11 @@ interface BlogPost {
 }
 
 const BlogPost = () => {
+  const { t } = useTranslation(); // Initialize
   const { id } = useParams();
   const { user } = useAuth();
   const [post, setPost] = useState<BlogPost | null>(null);
-  const [isLiked, setIsLiked] = useState(false); // State để lưu trạng thái tim
+  const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
 
@@ -46,7 +48,7 @@ const BlogPost = () => {
       const response = await axios.get(`/api/blogs/${id}`);
       setPost(response.data.blog);
     } catch (error) {
-      toast.error('Không thể tải bài viết');
+      toast.error(t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -54,32 +56,26 @@ const BlogPost = () => {
 
   const handleLike = async () => {
     if (!user) {
-      toast.error('Vui lòng đăng nhập');
+      toast.error(t('blog.post.loginToComment'));
       return;
     }
 
     try {
       await axios.post(`/api/blogs/${id}/like`);
-      // fetchPost(); XOA DONG NAY
-
+      
       setIsLiked((prev) => !prev);
 
       setPost((prev) => {
         if (!prev) return null;
-
         const adjustment = isLiked ? -1 : 1;
-
         const newLikesLength = prev.likes.length + adjustment;
-
         return {
           ...prev,
           likes: Array(newLikesLength).fill("updated_locally")
         };
       });
     } catch (error) {
-      console.error(error);
-      toast.error('Có lỗi xảy ra');
-
+      toast.error(t('common.error'));
       setIsLiked((prev) => !prev);
     }
   };
@@ -88,7 +84,7 @@ const BlogPost = () => {
     e.preventDefault();
     
     if (!user) {
-      toast.error('Vui lòng đăng nhập');
+      toast.error(t('blog.post.loginToComment'));
       return;
     }
 
@@ -98,9 +94,9 @@ const BlogPost = () => {
       await axios.post(`/api/blogs/${id}/comments`, { content: comment });
       setComment('');
       fetchPost();
-      toast.success('Đã thêm bình luận');
+      toast.success(t('blog.post.successComment'));
     } catch (error) {
-      toast.error('Có lỗi xảy ra');
+      toast.error(t('common.error'));
     }
   };
 
@@ -115,12 +111,10 @@ const BlogPost = () => {
   if (!post) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
-        <p className="text-xl text-gray-600 dark:text-gray-400">Không tìm thấy bài viết</p>
+        <p className="text-xl text-gray-600 dark:text-gray-400">{t('blog.post.notFound')}</p>
       </div>
     );
   }
-
-  // const isLiked = user && post.likes.includes(user.id); XOA DONG NAY
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -180,7 +174,7 @@ const BlogPost = () => {
 
         {/* Comments Section */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
-          <h2 className="text-2xl font-bold mb-6">Bình luận ({post.comments.length})</h2>
+          <h2 className="text-2xl font-bold mb-6">{t('blog.post.comments')} ({post.comments.length})</h2>
 
           {/* Comment Form */}
           {user && (
@@ -188,11 +182,11 @@ const BlogPost = () => {
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Viết bình luận..."
+                placeholder={t('blog.post.commentPlaceholder')}
                 className="w-full input min-h-[100px] mb-3"
               />
               <button type="submit" className="btn-primary">
-                Gửi bình luận
+                {t('blog.post.submitComment')}
               </button>
             </form>
           )}
@@ -221,7 +215,7 @@ const BlogPost = () => {
           </div>
 
           {post.comments.length === 0 && (
-            <p className="text-center text-gray-500 py-8">Chưa có bình luận nào</p>
+            <p className="text-center text-gray-500 py-8">{t('blog.post.noComments')}</p>
           )}
         </div>
       </div>
@@ -230,11 +224,3 @@ const BlogPost = () => {
 };
 
 export default BlogPost;
-
-
-
-
-
-
-
-

@@ -95,51 +95,51 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Stats Section */}
+      {/* Stats Section - UPDATED */}
       <div className="bg-gray-100 dark:bg-gray-800 py-16">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-4xl font-bold text-primary-600 mb-2">1000+</div>
-              <div className="text-gray-600 dark:text-gray-400">Phòng trọ</div>
+              <div className="text-gray-600 dark:text-gray-400">{t('home.stats.rooms')}</div>
             </div>
             <div>
               <div className="text-4xl font-bold text-primary-600 mb-2">500+</div>
-              <div className="text-gray-600 dark:text-gray-400">Chủ trọ</div>
+              <div className="text-gray-600 dark:text-gray-400">{t('home.stats.landlords')}</div>
             </div>
             <div>
               <div className="text-4xl font-bold text-primary-600 mb-2">5000+</div>
-              <div className="text-gray-600 dark:text-gray-400">Sinh viên</div>
+              <div className="text-gray-600 dark:text-gray-400">{t('home.stats.students')}</div>
             </div>
             <div>
               <div className="text-4xl font-bold text-primary-600 mb-2">50+</div>
-              <div className="text-gray-600 dark:text-gray-400">Trường ĐH</div>
+              <div className="text-gray-600 dark:text-gray-400">{t('home.stats.unis')}</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* CTA Section */}
+      {/* CTA Section - UPDATED */}
       <div className="container mx-auto px-4 py-20">
         <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-12 text-center text-white">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Bắt đầu tìm kiếm phòng trọ ngay hôm nay
+            {t('home.cta.title')}
           </h2>
           <p className="text-xl mb-8 text-primary-100">
-            Tham gia cộng đồng sinh viên tìm trọ lớn nhất Việt Nam
+            {t('home.cta.subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => navigate('/listings')}
               className="bg-white text-primary-600 hover:bg-gray-100 px-8 py-3 rounded-lg font-semibold transition-colors"
             >
-              Xem danh sách phòng
+              {t('home.cta.viewListings')}
             </button>
             <button
               onClick={() => navigate('/map')}
               className="bg-primary-800 hover:bg-primary-900 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
             >
-              Khám phá bản đồ
+              {t('home.cta.viewMap')}
             </button>
           </div>
         </div>
@@ -149,11 +149,3 @@ const Home = () => {
 };
 
 export default Home;
-
-
-
-
-
-
-
-
