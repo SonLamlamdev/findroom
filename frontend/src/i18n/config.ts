@@ -8,14 +8,30 @@ const resources = {
         home: 'Trang chủ',
         listings: 'Danh sách phòng',
         map: 'Bản đồ',
-        roommate: 'Tìm bạn cùng phòng',
+        roommate: 'Tìm bạn ở ghép',
         blog: 'Blog & Cộng đồng',
-        dashboard: 'Quản lý',
+        dashboard: 'Bảng điều khiển', // Changed from "Quản lý" to match new context
+        stats: 'Thống kê', // New
+        post: 'Đăng bài', // New
         profile: 'Hồ sơ',
-        saved: 'Đã lưu',
+        saved: 'Tin đã lưu',
+        savedRoommates: 'Hồ sơ ở ghép đã lưu', // New
+        messages: 'Tin nhắn', // New
+        stayed: 'Phòng đã ở', // New
+        admin: 'Quản trị', // New
         login: 'Đăng nhập',
         register: 'Đăng ký',
         logout: 'Đăng xuất'
+      },
+      footer: { // --- NEW SECTION ---
+        description: "Nền tảng tìm trọ thông minh dành riêng cho sinh viên. Kết nối người cho thuê và người tìm trọ một cách hiệu quả và an toàn.",
+        about: "Về chúng tôi",
+        terms: "Điều khoản sử dụng",
+        privacy: "Chính sách bảo mật",
+        faq: "Câu hỏi thường gặp",
+        support: "Hỗ trợ",
+        contact: "Liên hệ",
+        quickLinks: "Liên kết nhanh"
       },
       common: {
         search: 'Tìm kiếm',
@@ -31,7 +47,10 @@ const resources = {
         location: 'Vị trí',
         area: 'Diện tích',
         available: 'Còn trống',
-        rented: 'Đã cho thuê'
+        rented: 'Đã cho thuê',
+        loading: "Đang tải...", // New
+        error: "Có lỗi xảy ra", // New
+        success: "Thành công"   // New
       },
       home: {
         hero: {
@@ -74,14 +93,30 @@ const resources = {
         home: 'Home',
         listings: 'Listings',
         map: 'Map',
-        roommate: 'Find Roommate',
+        roommate: 'Roommate Finder',
         blog: 'Blog & Community',
         dashboard: 'Dashboard',
+        stats: 'Statistics', // New
+        post: 'Post Listing', // New
         profile: 'Profile',
-        saved: 'Saved',
+        saved: 'Saved Listings',
+        savedRoommates: 'Saved Roommates', // New
+        messages: 'Messages', // New
+        stayed: 'Stayed History', // New
+        admin: 'Admin Panel', // New
         login: 'Login',
         register: 'Register',
         logout: 'Logout'
+      },
+      footer: { // --- NEW SECTION ---
+        description: "Smart accommodation platform exclusively for students. Connecting landlords and tenants effectively and safely.",
+        about: "About Us",
+        terms: "Terms of Use",
+        privacy: "Privacy Policy",
+        faq: "FAQ",
+        support: "Support",
+        contact: "Contact",
+        quickLinks: "Quick Links"
       },
       common: {
         search: 'Search',
@@ -97,7 +132,10 @@ const resources = {
         location: 'Location',
         area: 'Area',
         available: 'Available',
-        rented: 'Rented'
+        rented: 'Rented',
+        loading: "Loading...", // New
+        error: "Error occurred", // New
+        success: "Success" // New
       },
       home: {
         hero: {
@@ -140,19 +178,14 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'vi',
-    fallbackLng: 'vi',
+    fallbackLng: 'vi', // Default to Vietnamese if detection fails
     interpolation: {
       escapeValue: false
+    },
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage'], // Saves the choice so it persists on refresh
     }
   });
 
 export default i18n;
-
-
-
-
-
-
-
-
