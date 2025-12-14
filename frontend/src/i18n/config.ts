@@ -171,14 +171,14 @@ const resources = {
         pageTitle: "Đăng tin cho thuê phòng trọ",
         pageSubtitle: "Giống như đăng bài Facebook - Dễ dàng và nhanh chóng! ✨",
         sections: {
-          media: "📸 Ảnh & Video",
+          media: "📸 Ảnh",
           basicInfo: "📝 Thông tin cơ bản",
           location: "📍 Vị trí trên bản đồ",
           amenities: "✨ Tiện nghi",
           rules: "📋 Nội quy"
         },
         labels: {
-          upload: "Click để chọn ảnh/video",
+          upload: "Click để chọn ảnh",
           uploadLimit: "Tối đa 10 file, mỗi file không quá 10MB",
           title: "Tiêu đề bài đăng *",
           titlePlaceholder: "VD: Phòng trọ đẹp gần ĐH Bách Khoa...",
@@ -222,7 +222,7 @@ const resources = {
           cancel: "Hủy"
         },
         errors: {
-          maxFiles: "Tối đa 10 ảnh/video",
+          maxFiles: "Tối đa 10 ảnh",
           fileSize: "Kích thước file không được vượt quá 10MB",
           location: "Vui lòng chọn vị trí trên bản đồ",
           minImage: "Vui lòng thêm ít nhất 1 ảnh",
@@ -677,14 +677,14 @@ const resources = {
         pageTitle: "Post a Rental Listing",
         pageSubtitle: "Just like posting on Facebook - Easy and Fast! ✨",
         sections: {
-          media: "📸 Photos & Videos",
+          media: "📸 Photos",
           basicInfo: "📝 Basic Information",
           location: "📍 Location on Map",
           amenities: "✨ Amenities",
           rules: "📋 House Rules"
         },
         labels: {
-          upload: "Click to select photos/videos",
+          upload: "Click to select photos",
           uploadLimit: "Max 10 files, each file under 10MB",
           title: "Listing Title *",
           titlePlaceholder: "Ex: Nice room near Bach Khoa Uni...",
@@ -728,7 +728,7 @@ const resources = {
           cancel: "Cancel"
         },
         errors: {
-          maxFiles: "Max 10 photos/videos",
+          maxFiles: "Max 10 photos",
           fileSize: "File size must not exceed 10MB",
           location: "Please select a location on the map",
           minImage: "Please add at least 1 image",
