@@ -39,9 +39,7 @@ router.get('/', async (req, res) => {
     let total = 0;
 
     // 3. SPECIAL CASE: Sort by 'likes' (Array Length)
-    // MongoDB standard query cannot sort by array length easily, so we do it in memory.
     if (sort === 'likes' || sort === '-likes') {
-      // Fetch all matching docs (projection to keep it light)
       const allMatchingDocs = await Blog.find(query)
         .select('likes createdAt views')
         .lean();
@@ -52,7 +50,7 @@ router.get('/', async (req, res) => {
       allMatchingDocs.sort((a, b) => {
         const lenA = a.likes ? a.likes.length : 0;
         const lenB = b.likes ? b.likes.length : 0;
-        return lenB - lenA; // Descending
+        return lenB - lenA; 
       });
 
       // Slice for Pagination
@@ -60,23 +58,22 @@ router.get('/', async (req, res) => {
         .slice(skip, skip + safeLimit)
         .map(doc => doc._id);
 
-      // Fetch Full Details for the sliced IDs
+      // Fetch Full Details
       blogs = await Blog.find({ _id: { $in: pagedIds } })
         .populate('author', '_id name avatar')
         .lean();
       
-      // Re-order to match the sorted IDs (because $in doesn't guarantee order)
+      // Re-order to match the sorted IDs
       blogs.sort((a, b) => {
         return pagedIds.findIndex(id => id.equals(a._id)) - pagedIds.findIndex(id => id.equals(b._id));
       });
 
     } else {
-      // 4. STANDARD CASE: Sort by Database Fields (createdAt, views)
+      // 4. STANDARD CASE: Sort by DB Fields
       let sortOption = '-createdAt';
       if (sort === 'views' || sort === '-views') sortOption = '-views';
       else if (sort === 'oldest' || sort === 'createdAt') sortOption = 'createdAt';
 
-      // Execute standard efficient query
       const [data, count] = await Promise.all([
         Blog.find(query)
           .populate('author', '_id name avatar')
@@ -91,9 +88,21 @@ router.get('/', async (req, res) => {
       total = count;
     }
 
-    // 5. SAFETY FILTER: Remove blogs where author is null (User deleted)
-    // This prevents the "TypeError: null is not an object" on frontend
-    blogs = blogs.filter(blog => blog.author !== null);
+    // 5. SAFETY HANDLING: Map null authors instead of filtering
+    // This fixes the issue where results disappear if the user was deleted
+    blogs = blogs.map(blog => {
+      if (!blog.author) {
+        return {
+          ...blog,
+          author: { 
+            _id: null, 
+            name: 'Người dùng ẩn', // Or "Unknown User"
+            avatar: null 
+          }
+        };
+      }
+      return blog;
+    });
 
     res.json({
       blogs,
@@ -113,120 +122,80 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ... Keep all other routes (get/:id, post, put, delete, etc.) exactly the same as before ...
 // Get single blog
 router.get('/:id', async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(404).json({ error: 'Blog not found' });
     }
-
     const blog = await Blog.findById(req.params.id)
       .populate('author', '_id name avatar')
       .populate('comments.user', '_id name avatar')
       .lean();
-    
-    if (!blog) {
-      return res.status(404).json({ error: 'Blog not found' });
-    }
-
-    // Safely increment views
+    if (!blog) return res.status(404).json({ error: 'Blog not found' });
     Blog.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } }).exec();
-
     res.json({ blog });
   } catch (error) {
-    console.error(error);
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'Server error' });
-    }
+    if (!res.headersSent) res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Create blog
 router.post('/', auth, upload.array('images', 5), async (req, res) => {
   try {
     const blogData = req.body.data ? JSON.parse(req.body.data) : req.body;
-    
-    // Upload files to Cloudinary
     let processedFiles = [];
     if (req.files && req.files.length > 0) {
       processedFiles = await require('../middleware/upload').uploadToCloudinary(req.files, 'findroom/blogs');
     }
-    
-    const { getFileUrls } = require('../utils/fileHelper');
-    const images = getFileUrls(processedFiles);
-
-    const blog = new Blog({
-      ...blogData,
-      author: req.userId,
-      images
-    });
-
+    const images = require('../utils/fileHelper').getFileUrls(processedFiles);
+    const blog = new Blog({ ...blogData, author: req.userId, images });
     await blog.save();
-
     res.status(201).json({ message: 'Blog created', blog });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (error) { res.status(500).json({ error: 'Server error' }); }
 });
 
-// Update blog
 router.put('/:id', auth, async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
     if (!blog) return res.status(404).json({ error: 'Blog not found' });
     if (blog.author.toString() !== req.userId) return res.status(403).json({ error: 'Not authorized' });
-
     Object.assign(blog, req.body);
     await blog.save();
     res.json({ message: 'Blog updated', blog });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (error) { res.status(500).json({ error: 'Server error' }); }
 });
 
-// Delete blog
 router.delete('/:id', auth, async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
     if (!blog) return res.status(404).json({ error: 'Blog not found' });
     if (blog.author.toString() !== req.userId) return res.status(403).json({ error: 'Not authorized' });
-
     await blog.deleteOne();
     res.json({ message: 'Blog deleted' });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (error) { res.status(500).json({ error: 'Server error' }); }
 });
 
-// Like/unlike blog
 router.post('/:id/like', auth, async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
     if (!blog) return res.status(404).json({ error: 'Blog not found' });
-
     const userIndex = blog.likes.indexOf(req.userId);
     if (userIndex > -1) blog.likes.splice(userIndex, 1);
     else blog.likes.push(req.userId);
-
     await blog.save();
     res.json({ message: 'Updated', likes: blog.likes.length });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (error) { res.status(500).json({ error: 'Server error' }); }
 });
 
 router.post('/:id/comments', auth, async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
     if (!blog) return res.status(404).json({ error: 'Blog not found' });
-
     blog.comments.push({ user: req.userId, content: req.body.content });
     await blog.save();
     res.json({ message: 'Comment added', blog });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (error) { res.status(500).json({ error: 'Server error' }); }
 });
 
 module.exports = router;
