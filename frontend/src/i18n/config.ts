@@ -366,7 +366,8 @@ const resources = {
       saved: {
         title: "Phòng đã lưu",
         empty: "Bạn chưa lưu phòng nào",
-        explore: "Khám phá phòng trọ"
+        explore: "Khám phá phòng trọ",
+        saved_roommate: "Đã lưu ghép trọ"
       },
       roommate: {
         title: "Tìm bạn cùng phòng",
@@ -1007,7 +1008,8 @@ const resources = {
       saved: {
         title: "Saved Listings",
         empty: "You haven't saved any listings yet",
-        explore: "Explore Listings"
+        explore: "Explore Listings",
+        saved_roommate: "Saved Roommates"
       },
       roommate: {
         title: "Find Roommate",
