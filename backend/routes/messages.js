@@ -5,7 +5,7 @@ const { Conversation } = require('../models/Message');
 const { auth } = require('../middleware/auth');
 const mongoose = require('mongoose');
 
-// Helper function to safely compare IDs
+// Helper to compare IDs safely
 const areIdsEqual = (id1, id2) => {
   if (!id1 || !id2) return false;
   return id1.toString() === id2.toString();
@@ -23,17 +23,21 @@ router.get('/conversations', auth, async (req, res) => {
       .sort('-lastMessageAt')
       .lean();
 
-    // Group logic to handle multiple chats with same person
+    // STRICT FILTER: Double check that the user is actually in the populated participants
+    // This removes "Ghost" conversations causing your 403 error
+    const validConversations = allConversations.filter(conv => {
+      // Check if any participant matches req.userId
+      return conv.participants.some(p => p && p._id && areIdsEqual(p._id, req.userId));
+    });
+
     const conversationMap = new Map();
     
-    allConversations.forEach(conv => {
+    validConversations.forEach(conv => {
       // Find the "other" person
       const otherParticipant = conv.participants.find(p => !areIdsEqual(p._id, req.userId));
       
-      if (!otherParticipant) {
-        conversationMap.set(conv._id.toString(), conv);
-        return;
-      }
+      // If no other participant (e.g. they were deleted), skip this conversation
+      if (!otherParticipant) return;
       
       const key = `user_${otherParticipant._id}`;
       const existing = conversationMap.get(key);
@@ -73,7 +77,6 @@ router.post('/conversations', auth, async (req, res) => {
       return res.status(400).json({ error: 'Cannot create conversation with yourself' });
     }
 
-    // Try to find existing conversation
     let conversation = await Conversation.findOne({
       participants: { $all: [req.userId, recipientId] },
       participants: { $size: 2 }
@@ -83,7 +86,6 @@ router.post('/conversations', auth, async (req, res) => {
       .sort('-lastMessageAt -createdAt');
 
     if (!conversation) {
-      // Create new
       conversation = new Conversation({
         participants: [req.userId, recipientId],
         listing: listingId || undefined
@@ -110,12 +112,13 @@ router.get('/conversations/:conversationId/messages', auth, async (req, res) => 
       return res.status(404).json({ error: 'Invalid conversation ID' });
     }
 
+    // NOTE: We do NOT populate participants here to check IDs directly
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) {
       return res.status(404).json({ error: 'Conversation not found' });
     }
 
-    // ROBUST CHECK: Ensure user is a participant
+    // Direct ID check
     const isParticipant = conversation.participants.some(p => areIdsEqual(p, req.userId));
 
     if (!isParticipant) {
@@ -129,7 +132,6 @@ router.get('/conversations/:conversationId/messages', auth, async (req, res) => 
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit));
 
-    // Mark as read
     await Message.updateMany(
       {
         conversation: conversationId,
@@ -157,7 +159,6 @@ router.post('/conversations/:conversationId/messages', auth, async (req, res) =>
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) return res.status(404).json({ error: 'Conversation not found' });
 
-    // Robust Check
     if (!conversation.participants.some(p => areIdsEqual(p, req.userId))) {
       return res.status(403).json({ error: 'Access denied' });
     }
@@ -188,11 +189,9 @@ router.delete('/messages/:messageId', auth, async (req, res) => {
     const message = await Message.findById(req.params.messageId).populate('conversation');
     if (!message) return res.status(404).json({ error: 'Message not found' });
 
-    // Check participation
     const isParticipant = message.conversation.participants.some(p => areIdsEqual(p, req.userId));
     if (!isParticipant) return res.status(403).json({ error: 'Access denied' });
 
-    // Check ownership
     if (!areIdsEqual(message.sender, req.userId)) {
       return res.status(403).json({ error: 'You can only delete your own messages' });
     }
@@ -220,4 +219,4 @@ router.get('/unread-count', auth, async (req, res) => {
   }
 });
 
-module.exports = router;  
+module.exports = router;
