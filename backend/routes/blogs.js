@@ -5,121 +5,95 @@ const { auth } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const mongoose = require('mongoose');
 
-// Get all blogs (Refactored to use Aggregation for correct Sorting)
+// Get all blogs
 router.get('/', async (req, res) => {
   try {
     const { 
       category, 
       search, 
       tag,
-      sort = '-createdAt', 
+      sort = '-createdAt',
       page = 1, 
       limit = 10 
     } = req.query;
+    
+    // 1. Build the Query
+    const query = { published: true };
 
-    const pipeline = [];
-
-    // 1. MATCH: Filter published blogs
-    const matchStage = { published: true };
-
-    if (category) {
-      matchStage.category = category;
-    }
-
-    if (tag) {
-      matchStage.tags = { $in: [new RegExp(tag, 'i')] };
-    }
-
+    if (category) query.category = category;
+    if (tag) query.tags = { $in: [new RegExp(tag, 'i')] };
     if (search) {
-      matchStage.$or = [
+      query.$or = [
         { title: { $regex: search, $options: 'i' } },
         { content: { $regex: search, $options: 'i' } },
         { tags: { $in: [new RegExp(search, 'i')] } }
       ];
     }
-    
-    pipeline.push({ $match: matchStage });
 
-    // 2. ADD FIELDS: Calculate 'likesCount' for sorting
-    pipeline.push({
-      $addFields: {
-        likesCount: { $size: { $ifNull: ["$likes", []] } },
-        commentsCount: { $size: { $ifNull: ["$comments", []] } }
-      }
-    });
-
-    // 3. SORT: Handle various sort options
-    let sortStage = {};
-    if (sort === 'likes' || sort === '-likes') {
-      sortStage = { likesCount: -1 };
-    } else if (sort === 'views' || sort === '-views') {
-      sortStage = { views: -1 };
-    } else if (sort === 'oldest' || sort === 'createdAt') {
-      sortStage = { createdAt: 1 };
-    } else {
-      // Default: Newest
-      sortStage = { createdAt: -1 };
-    }
-    pipeline.push({ $sort: sortStage });
-
-    // 4. PAGINATION: Skip and Limit
+    // 2. Handle Pagination Inputs
     const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 50);
     const safePage = Math.max(Number(page) || 1, 1);
     const skip = (safePage - 1) * safeLimit;
 
-    // Use $facet to get both data and count in one query
-    pipeline.push({
-      $facet: {
-        blogs: [
-          { $skip: skip },
-          { $limit: safeLimit },
-          // 5. LOOKUP: Manually populate Author (equivalent to .populate)
-          {
-            $lookup: {
-              from: 'users', // Ensure this matches your collection name in DB (usually 'users')
-              localField: 'author',
-              foreignField: '_id',
-              as: 'authorDetails'
-            }
-          },
-          // 6. UNWIND: Lookup returns an array, we need the first object
-          {
-            $unwind: {
-              path: '$authorDetails',
-              preserveNullAndEmptyArrays: true // Vital: Keeps blog even if author is deleted
-            }
-          },
-          // 7. PROJECT: Clean up the output to match your frontend interface
-          {
-            $project: {
-              title: 1,
-              content: 1,
-              category: 1,
-              tags: 1,
-              images: 1,
-              views: 1,
-              likes: 1,
-              comments: 1,
-              createdAt: 1,
-              likesCount: 1,
-              author: {
-                _id: '$authorDetails._id',
-                name: '$authorDetails.name',
-                avatar: '$authorDetails.avatar'
-              }
-            }
-          }
-        ],
-        totalCount: [
-          { $count: 'count' }
-        ]
-      }
-    });
+    let blogs = [];
+    let total = 0;
 
-    const result = await Blog.aggregate(pipeline).maxTimeMS(2000);
-    
-    const blogs = result[0].blogs;
-    const total = result[0].totalCount[0] ? result[0].totalCount[0].count : 0;
+    // 3. SPECIAL CASE: Sort by 'likes' (Array Length)
+    // MongoDB standard query cannot sort by array length easily, so we do it in memory.
+    if (sort === 'likes' || sort === '-likes') {
+      // Fetch all matching docs (projection to keep it light)
+      const allMatchingDocs = await Blog.find(query)
+        .select('likes createdAt views')
+        .lean();
+      
+      total = allMatchingDocs.length;
+
+      // Sort in Memory (High to Low)
+      allMatchingDocs.sort((a, b) => {
+        const lenA = a.likes ? a.likes.length : 0;
+        const lenB = b.likes ? b.likes.length : 0;
+        return lenB - lenA; // Descending
+      });
+
+      // Slice for Pagination
+      const pagedIds = allMatchingDocs
+        .slice(skip, skip + safeLimit)
+        .map(doc => doc._id);
+
+      // Fetch Full Details for the sliced IDs
+      blogs = await Blog.find({ _id: { $in: pagedIds } })
+        .populate('author', '_id name avatar')
+        .lean();
+      
+      // Re-order to match the sorted IDs (because $in doesn't guarantee order)
+      blogs.sort((a, b) => {
+        return pagedIds.findIndex(id => id.equals(a._id)) - pagedIds.findIndex(id => id.equals(b._id));
+      });
+
+    } else {
+      // 4. STANDARD CASE: Sort by Database Fields (createdAt, views)
+      let sortOption = '-createdAt';
+      if (sort === 'views' || sort === '-views') sortOption = '-views';
+      else if (sort === 'oldest' || sort === 'createdAt') sortOption = 'createdAt';
+
+      // Execute standard efficient query
+      const [data, count] = await Promise.all([
+        Blog.find(query)
+          .populate('author', '_id name avatar')
+          .sort(sortOption)
+          .limit(safeLimit)
+          .skip(skip)
+          .lean(),
+        Blog.countDocuments(query)
+      ]);
+
+      blogs = data;
+      total = count;
+    }
+
+    // 5. SAFETY FILTER: Remove blogs where author is null (User deleted)
+    // This prevents the "TypeError: null is not an object" on frontend
+    blogs = blogs.filter(blog => blog.author !== null);
 
     res.json({
       blogs,
@@ -132,7 +106,7 @@ router.get('/', async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Blog fetch error:", error);
+    console.error("Get Blogs Error:", error);
     if (!res.headersSent) {
       res.status(500).json({ error: 'Server error' });
     }
@@ -142,7 +116,6 @@ router.get('/', async (req, res) => {
 // Get single blog
 router.get('/:id', async (req, res) => {
   try {
-    // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(404).json({ error: 'Blog not found' });
     }
@@ -150,17 +123,14 @@ router.get('/:id', async (req, res) => {
     const blog = await Blog.findById(req.params.id)
       .populate('author', '_id name avatar')
       .populate('comments.user', '_id name avatar')
-      .lean()
-      .maxTimeMS(1000);
+      .lean();
     
     if (!blog) {
       return res.status(404).json({ error: 'Blog not found' });
     }
 
-    // Increment views (non-blocking)
-    Blog.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } })
-      .exec()
-      .catch(err => console.error('View increment error:', err.message));
+    // Safely increment views
+    Blog.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } }).exec();
 
     res.json({ blog });
   } catch (error) {
@@ -176,11 +146,10 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
   try {
     const blogData = req.body.data ? JSON.parse(req.body.data) : req.body;
     
-    // Upload files to Cloudinary in parallel
-    const upload = require('../middleware/upload');
+    // Upload files to Cloudinary
     let processedFiles = [];
     if (req.files && req.files.length > 0) {
-      processedFiles = await upload.uploadToCloudinary(req.files, 'findroom/blogs');
+      processedFiles = await require('../middleware/upload').uploadToCloudinary(req.files, 'findroom/blogs');
     }
     
     const { getFileUrls } = require('../utils/fileHelper');
@@ -194,15 +163,10 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
 
     await blog.save();
 
-    res.status(201).json({
-      message: 'Blog created successfully',
-      blog
-    });
+    res.status(201).json({ message: 'Blog created', blog });
   } catch (error) {
     console.error(error);
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'Server error' });
-    }
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -210,19 +174,12 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
-    
-    if (!blog) {
-      return res.status(404).json({ error: 'Blog not found' });
-    }
-
-    if (blog.author.toString() !== req.userId) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
+    if (!blog) return res.status(404).json({ error: 'Blog not found' });
+    if (blog.author.toString() !== req.userId) return res.status(403).json({ error: 'Not authorized' });
 
     Object.assign(blog, req.body);
     await blog.save();
-
-    res.json({ message: 'Blog updated successfully', blog });
+    res.json({ message: 'Blog updated', blog });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -232,18 +189,11 @@ router.put('/:id', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
-    
-    if (!blog) {
-      return res.status(404).json({ error: 'Blog not found' });
-    }
-
-    if (blog.author.toString() !== req.userId) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
+    if (!blog) return res.status(404).json({ error: 'Blog not found' });
+    if (blog.author.toString() !== req.userId) return res.status(403).json({ error: 'Not authorized' });
 
     await blog.deleteOne();
-
-    res.json({ message: 'Blog deleted successfully' });
+    res.json({ message: 'Blog deleted' });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -253,21 +203,13 @@ router.delete('/:id', auth, async (req, res) => {
 router.post('/:id/like', auth, async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
-    
-    if (!blog) {
-      return res.status(404).json({ error: 'Blog not found' });
-    }
+    if (!blog) return res.status(404).json({ error: 'Blog not found' });
 
     const userIndex = blog.likes.indexOf(req.userId);
-    
-    if (userIndex > -1) {
-      blog.likes.splice(userIndex, 1);
-    } else {
-      blog.likes.push(req.userId);
-    }
+    if (userIndex > -1) blog.likes.splice(userIndex, 1);
+    else blog.likes.push(req.userId);
 
     await blog.save();
-
     res.json({ message: 'Updated', likes: blog.likes.length });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -276,21 +218,12 @@ router.post('/:id/like', auth, async (req, res) => {
 
 router.post('/:id/comments', auth, async (req, res) => {
   try {
-    const { content } = req.body;
     const blog = await Blog.findById(req.params.id);
-    
-    if (!blog) {
-      return res.status(404).json({ error: 'Blog not found' });
-    }
+    if (!blog) return res.status(404).json({ error: 'Blog not found' });
 
-    blog.comments.push({
-      user: req.userId,
-      content
-    });
-
+    blog.comments.push({ user: req.userId, content: req.body.content });
     await blog.save();
-
-    res.json({ message: 'Comment added successfully', blog });
+    res.json({ message: 'Comment added', blog });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }

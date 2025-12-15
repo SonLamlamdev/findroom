@@ -14,7 +14,7 @@ interface BlogPost {
   tags?: string[];
   customId?: string;
   rating?: number;
-  author?: { // Made optional to prevent crashes
+  author?: { // Safety: Optional
     name: string;
     avatar?: string;
   };
@@ -47,8 +47,12 @@ const Blog = () => {
 
   useEffect(() => {
     fetchPosts();
-    fetchAllTags();
   }, [selectedCategory, searchQuery, selectedTag, sortBy]);
+
+  // Separate effect for tags to run only once
+  useEffect(() => {
+    fetchAllTags();
+  }, []);
 
   const fetchPosts = async () => {
     try {
@@ -70,13 +74,16 @@ const Blog = () => {
 
   const fetchAllTags = async () => {
     try {
-      const response = await axios.get('/api/blogs');
+      // Added limit=1000 to get tags from ALL blogs, not just the first 10
+      const response = await axios.get('/api/blogs?limit=1000');
       const allTagsSet = new Set<string>();
-      response.data.blogs.forEach((blog: BlogPost) => {
-        if (blog.tags) {
-          blog.tags.forEach(tag => allTagsSet.add(tag));
-        }
-      });
+      if (response.data.blogs) {
+        response.data.blogs.forEach((blog: BlogPost) => {
+          if (blog.tags) {
+            blog.tags.forEach(tag => allTagsSet.add(tag));
+          }
+        });
+      }
       setAllTags(Array.from(allTagsSet));
     } catch (error) {
       console.error('Failed to fetch tags:', error);
@@ -140,7 +147,7 @@ const Blog = () => {
           >
             <option value="-createdAt">{t('listings.sort.newest')}</option>
             <option value="createdAt">{t('listings.sort.newest').replace('Mới', 'Cũ').replace('Newest', 'Oldest')}</option>
-            <option value="likes">Like (Popular)</option>
+            <option value="likes">Like (High to Low)</option>
             <option value="views">View (High to Low)</option>
           </select>
           <button onClick={fetchPosts} className="btn-primary">
@@ -241,15 +248,14 @@ const Blog = () => {
                 </p>
 
                 <div className="flex items-center justify-between text-sm">
-                  {/* FIXED: Safe Navigation for Author */}
                   <div className="flex items-center">
                     <img
                       src={getAvatarUrl(post.author?.avatar)}
-                      alt={post.author?.name || 'User'}
+                      alt={post.author?.name || 'Unknown'}
                       className="w-6 h-6 rounded-full mr-2"
                     />
                     <span className="text-gray-700 dark:text-gray-300">
-                      {post.author?.name || t('common.unknownUser', 'Người dùng ẩn')}
+                      {post.author?.name || t('common.unknownUser', 'Unknown User')}
                     </span>
                   </div>
 
