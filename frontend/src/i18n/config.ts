@@ -505,6 +505,17 @@ const resources = {
           deleteSuccess: "Đã xóa thành công",
           error: "Thao tác thất bại"
         }
+      },
+      about: {
+        title:{
+          title1: "Về FindRoom",
+          title2: "Hành trình kiến tạo không gian sống an toàn, tiện nghi và minh bạch dành cho sinh viên Việt Nam."
+        },
+        intro:{
+          intro_title: "Câu chuyện của chúng tôi",
+          content1: 'Là những người từng trải qua quãng đời sinh viên, chúng tôi thấu hiểu sâu sắc nỗi vất vả khi đi tìm phòng trọ: thông tin thiếu minh bạch, hình ảnh "treo đầu dê bán thịt chó", và đau đớn nhất là vấn nạn lừa đảo tiền cọc.',
+          content2: "FindRoom được thành lập với một mục tiêu duy nhất: Giải quyết triệt để những khó khăn đó.Chúng tôi không chỉ xây dựng một trang web đăng tin, mà đang xây dựng một cộng đồng nơi niềm tin được đặt lên hàng đầu."
+        }
       }
     }
   },
@@ -1010,6 +1021,17 @@ const resources = {
           unbanSuccess: "User unbanned",
           deleteSuccess: "Deleted successfully",
           error: "Action failed"
+        }
+      },
+      about: {
+        title:{
+          title1: "About FindRoom",
+          title2: "The mission to craft safe, amenity-rich, and transparent living experiences for Vietnamese students."
+        },
+        intro:{
+          intro_title: "Our story",
+          content1: "Having experienced student life firsthand, we are intimately aware of the hardships involved in finding accommodation: opaque information, deceptive advertising, and the most agonizing issue of all—deposit fraud.",
+          content2: "FindRoom was established with one sole mission: to resolve these issues once and for all. We are building more than just a listing website; we are creating a community where trust comes first."
         }
       }
     }

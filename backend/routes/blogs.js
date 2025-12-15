@@ -221,7 +221,6 @@ router.post('/:id/like', auth, async (req, res) => {
   }
 });
 
-// Add comment
 router.post('/:id/comments', auth, async (req, res) => {
   try {
     const { content } = req.body;

@@ -1,16 +1,18 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FiTarget, FiUsers, FiShield, FiHeart, FiCheckCircle } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 
 const About = () => {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12">
       {/* Hero Section */}
       <div className="bg-primary-600 dark:bg-primary-900 text-white py-16">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold mb-4">Về FindRoom</h1>
+          <h1 className="text-4xl font-bold mb-4">{t("about.title.title1")}</h1>
           <p className="text-xl max-w-2xl mx-auto text-primary-100">
-            Hành trình kiến tạo không gian sống an toàn, tiện nghi và minh bạch dành cho sinh viên Việt Nam.
+            {t("about.title.title2")}
           </p>
         </div>
       </div>
