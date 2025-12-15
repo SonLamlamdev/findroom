@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from '../config/axios';
 import { FiSend, FiMessageCircle, FiHome, FiTrash2 } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
@@ -47,37 +47,77 @@ const Messages = () => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { listingId, recipientId } = useParams();
+  const navigate = useNavigate();
+  
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
+  // 1. Initial Load: Fetch List & Handle URL Params
   useEffect(() => {
-    fetchConversations();
-  }, []);
+    const init = async () => {
+      try {
+        setLoading(true);
+        // A. Fetch List
+        const resList = await axios.get('/api/messages/conversations');
+        let convList = resList.data.conversations.sort((a: Conversation, b: Conversation) => {
+           const aTime = new Date(a.lastMessageAt || a.createdAt || 0).getTime();
+           const bTime = new Date(b.lastMessageAt || b.createdAt || 0).getTime();
+           return bTime - aTime;
+        });
+        setConversations(convList);
 
-  useEffect(() => {
-    if (recipientId) {
-      createOrGetConversation();
-    }
-  }, [listingId, recipientId]);
+        // B. Check URL for specific chat request
+        if (recipientId) {
+          // "Message Owner" mode: Get or Create specific chat
+          const resCreate = await axios.post('/api/messages/conversations', {
+            listingId: listingId || undefined,
+            recipientId
+          });
+          
+          const targetConv = resCreate.data.conversation;
+          setSelectedConversation(targetConv);
+          
+          // Refresh list to include new conv if it wasn't there
+          if (!convList.find((c: any) => c._id === targetConv._id)) {
+            setConversations(prev => [targetConv, ...prev]);
+          }
+        } 
+      } catch (error) {
+        console.error("Init Error:", error);
+        const errorMessage = getErrorMessage(error, t('messages.createError'));
+        // Only toast if it's not a 404/403 (which are handled by reset)
+        if (!errorMessage.includes('Access denied')) {
+            toast.error(errorMessage);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    if (user) init();
+  }, [listingId, recipientId, user]);
+
+  // 2. Fetch Messages when Conversation Selected
   useEffect(() => {
     if (selectedConversation) {
       setShouldAutoScroll(true);
       fetchMessages(selectedConversation._id);
+      
       const interval = setInterval(() => {
         fetchMessages(selectedConversation._id);
       }, 3000);
       return () => clearInterval(interval);
     }
-  }, [selectedConversation]);
+  }, [selectedConversation?._id]); // Only re-run if ID changes
 
   const isNearBottom = () => {
     const container = messagesContainerRef.current;
@@ -124,64 +164,18 @@ const Messages = () => {
     }
   };
 
-  const fetchConversations = async () => {
-    try {
-      const response = await axios.get('/api/messages/conversations');
-      let conversations = response.data.conversations;
-      conversations = conversations.sort((a: Conversation, b: Conversation) => {
-        const aTime = new Date(a.lastMessageAt || a.createdAt || 0).getTime();
-        const bTime = new Date(b.lastMessageAt || b.createdAt || 0).getTime();
-        return bTime - aTime;
-      });
-      setConversations(conversations);
-      
-      if (recipientId) {
-        let conv: Conversation | undefined;
-        if (listingId) {
-          conv = conversations.find(
-            (c: Conversation) => {
-              const hasRecipient = c.participants.some(p => p._id === recipientId);
-              return c.listing?._id === listingId && hasRecipient;
-            }
-          );
-        } else {
-          conv = conversations.find(
-            (c: Conversation) => {
-              const hasRecipient = c.participants.some(p => p._id === recipientId);
-              return hasRecipient && !c.listing;
-            }
-          );
-        }
-        if (conv) setSelectedConversation(conv);
-      }
-    } catch (error) {
-      console.error('Failed to fetch conversations:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createOrGetConversation = async () => {
-    try {
-      const response = await axios.post('/api/messages/conversations', {
-        listingId: listingId || undefined,
-        recipientId
-      });
-      setSelectedConversation(response.data.conversation);
-      fetchConversations();
-    } catch (error: any) {
-      console.error('Failed to create conversation:', error);
-      const errorMessage = getErrorMessage(error, t('messages.createError'));
-      toast.error(errorMessage);
-    }
-  };
-
   const fetchMessages = async (conversationId: string) => {
     try {
       const response = await axios.get(`/api/messages/conversations/${conversationId}/messages`);
       setMessages(response.data.messages);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch messages:', error);
+      // If access denied (stale data), reset selection
+      if (error.response && (error.response.status === 403 || error.response.status === 404)) {
+          setSelectedConversation(null);
+          navigate('/messages'); // Clear URL params
+          toast.error(t('common.error'));
+      }
     }
   };
 
@@ -213,7 +207,14 @@ const Messages = () => {
       setMessages(prev => 
         prev.map(msg => msg._id === tempMessage._id ? response.data.message : msg)
       );
-      fetchConversations();
+      
+      // Update sidebar preview
+      setConversations(prev => prev.map(c => 
+        c._id === selectedConversation._id 
+          ? { ...c, lastMessage: { content: messageContent, createdAt: new Date().toISOString() } }
+          : c
+      ).sort((a, b) => new Date(b.lastMessage?.createdAt || 0).getTime() - new Date(a.lastMessage?.createdAt || 0).getTime()));
+
       setTimeout(() => scrollToBottom(true), 100);
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -236,7 +237,9 @@ const Messages = () => {
   };
 
   const getOtherParticipant = (conversation: Conversation) => {
-    return conversation.participants.find(p => p._id !== user?._id);
+    if (!user || !conversation.participants) return null;
+    // Safe comparison using IDs
+    return conversation.participants.find(p => p._id !== user._id) || conversation.participants[0];
   };
 
   if (loading) {
@@ -253,7 +256,7 @@ const Messages = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-200px)]">
         {/* Conversations List */}
-        <div className="lg:col-span-1 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden flex flex-col">
+        <div className={`lg:col-span-1 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden flex flex-col ${selectedConversation ? 'hidden lg:flex' : 'flex'}`}>
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <h2 className="font-semibold">{t('messages.conversations')}</h2>
           </div>
@@ -272,12 +275,12 @@ const Messages = () => {
                     onClick={() => setSelectedConversation(conversation)}
                     className={`w-full p-4 text-left border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
                       selectedConversation?._id === conversation._id
-                        ? 'bg-primary-50 dark:bg-primary-900/20'
+                        ? 'bg-primary-50 dark:bg-primary-900/20 border-l-4 border-l-primary-600'
                         : ''
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center overflow-hidden">
+                      <div className="w-12 h-12 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center overflow-hidden flex-shrink-0">
                         <img
                           src={getAvatarUrl(other?.avatar)}
                           alt={other?.name}
@@ -285,22 +288,26 @@ const Messages = () => {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">{other?.name}</p>
+                        <div className="flex justify-between items-baseline mb-1">
+                           <p className="font-semibold truncate">{other?.name || 'Unknown'}</p>
+                           {conversation.lastMessage && (
+                             <span className="text-xs text-gray-400 ml-2">
+                               {new Date(conversation.lastMessageAt || conversation.createdAt || '').toLocaleDateString()}
+                             </span>
+                           )}
+                        </div>
                         {conversation.listing && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate flex items-center gap-1">
-                            <FiHome size={12} />
+                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate flex items-center gap-1 mb-1">
+                            <FiHome size={12} className="flex-shrink-0" />
                             {conversation.listing.title}
                           </p>
                         )}
-                        {conversation.allListings && conversation.allListings.length > 1 && (
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                            {conversation.allListings.length} {t('messages.roomCount')}
-                          </p>
-                        )}
-                        {conversation.lastMessage && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate mt-1">
+                        {conversation.lastMessage ? (
+                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                             {conversation.lastMessage.content}
                           </p>
+                        ) : (
+                          <p className="text-xs text-primary-600 italic">Started a conversation</p>
                         )}
                       </div>
                     </div>
@@ -312,11 +319,17 @@ const Messages = () => {
         </div>
 
         {/* Chat Area */}
-        <div className="lg:col-span-2 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden flex flex-col">
+        <div className={`lg:col-span-2 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden flex flex-col ${!selectedConversation ? 'hidden lg:flex' : 'flex'}`}>
           {selectedConversation ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center">
+                <button 
+                  onClick={() => setSelectedConversation(null)}
+                  className="mr-3 lg:hidden text-gray-500 hover:text-gray-700"
+                >
+                  ←
+                </button>
                 {(() => {
                   const other = getOtherParticipant(selectedConversation);
                   return (
@@ -331,7 +344,7 @@ const Messages = () => {
                       <div>
                         <p className="font-semibold">{other?.name}</p>
                         {selectedConversation.listing && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
                             {selectedConversation.listing.title}
                           </p>
                         )}
@@ -344,7 +357,7 @@ const Messages = () => {
               {/* Messages */}
               <div 
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto p-4 space-y-4"
+                className="flex-1 overflow-y-auto p-4 space-y-4 bg-white dark:bg-gray-900"
                 onScroll={handleScroll}
                 style={{ scrollBehavior: 'smooth' }}
               >
@@ -358,10 +371,10 @@ const Messages = () => {
                     return (
                       <div
                         key={message._id}
-                        className={`flex items-start gap-2 ${isOwn ? 'justify-end' : 'justify-start'} group`}
+                        className={`flex items-end gap-2 ${isOwn ? 'justify-end' : 'justify-start'} group`}
                       >
                         {!isOwn && (
-                          <div className="w-8 h-8 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          <div className="w-8 h-8 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center flex-shrink-0 overflow-hidden mb-1">
                             <img
                               src={getAvatarUrl(message.sender.avatar)}
                               alt={message.sender.name}
@@ -369,52 +382,39 @@ const Messages = () => {
                             />
                           </div>
                         )}
-                        <div className="flex flex-col gap-1 max-w-xs lg:max-w-md">
+                        <div className="flex flex-col gap-1 max-w-[75%] lg:max-w-[60%]">
                           {!isOwn && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 px-1">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 px-1 mb-0.5">
                               {message.sender.name}
                             </p>
                           )}
                           <div
-                            className={`relative px-4 py-2 rounded-lg ${
+                            className={`relative px-4 py-2 rounded-2xl ${
                               isOwn
-                                ? 'bg-primary-600 text-white'
-                                : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                                ? 'bg-primary-600 text-white rounded-br-none'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-bl-none'
                             }`}
                           >
-                            <p className="text-sm">{message.content}</p>
-                            <div className="flex items-center justify-between mt-1">
-                              <p
-                                className={`text-xs ${
-                                  isOwn ? 'text-primary-100' : 'text-gray-500 dark:text-gray-400'
-                                }`}
-                              >
-                                {new Date(message.createdAt).toLocaleTimeString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', {
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </p>
-                              {isOwn && (
+                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                            <div className="flex items-center justify-end mt-1 gap-2">
+                               <p className={`text-[10px] ${isOwn ? 'text-primary-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                                 {new Date(message.createdAt).toLocaleTimeString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', {
+                                   hour: '2-digit',
+                                   minute: '2-digit'
+                                 })}
+                               </p>
+                               {isOwn && (
                                 <button
                                   onClick={() => deleteMessage(message._id)}
-                                  className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-primary-700 rounded"
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
                                   title={t('common.delete')}
                                 >
-                                  <FiTrash2 size={14} className="text-primary-100 hover:text-white" />
+                                  <FiTrash2 size={12} className="text-primary-100 hover:text-white" />
                                 </button>
                               )}
                             </div>
                           </div>
                         </div>
-                        {isOwn && (
-                          <div className="w-8 h-8 rounded-full bg-primary-200 dark:bg-primary-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                            <img
-                              src={getAvatarUrl(user?.avatar)}
-                              alt={user?.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
                       </div>
                     );
                   })
@@ -424,7 +424,7 @@ const Messages = () => {
 
               {/* Message Input */}
               <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                   <input
                     ref={inputRef}
                     type="text"
@@ -439,15 +439,15 @@ const Messages = () => {
                     onFocus={handleInputFocus}
                     onBlur={handleInputBlur}
                     placeholder={t('messages.placeholder')}
-                    className="input flex-1 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="input flex-1 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded-full py-2.5 px-4"
                     autoComplete="off"
                   />
                   <button
                     onClick={sendMessage}
                     disabled={!newMessage.trim()}
-                    className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                    className="btn-primary rounded-full w-10 h-10 flex items-center justify-center p-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
-                    <FiSend size={20} />
+                    <FiSend size={18} />
                   </button>
                 </div>
               </div>
