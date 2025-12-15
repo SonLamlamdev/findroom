@@ -123,7 +123,8 @@ const Navbar = () => {
                           className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
                           onClick={() => setUserMenuOpen(false)}
                         >
-                          <FiHeart className="inline mr-2" /> {t('nav.saved')}
+                          {/* FIXED: Changed from t('nav.saved') to t('nav.savedRoommates') */}
+                          <FiHeart className="inline mr-2" /> {t('nav.savedRoommates')}
                         </Link>
                         <Link
                           to="/stayed"
@@ -264,11 +265,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
-
-
-
-
-
-
-
