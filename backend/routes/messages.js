@@ -2,8 +2,14 @@ const express = require('express');
 const router = express.Router();
 const Message = require('../models/Message');
 const { Conversation } = require('../models/Message');
-const Listing = require('../models/Listing');
 const { auth } = require('../middleware/auth');
+const mongoose = require('mongoose');
+
+// Helper function to safely compare IDs
+const areIdsEqual = (id1, id2) => {
+  if (!id1 || !id2) return false;
+  return id1.toString() === id2.toString();
+};
 
 // Get all conversations for current user
 router.get('/conversations', auth, async (req, res) => {
@@ -15,14 +21,14 @@ router.get('/conversations', auth, async (req, res) => {
       .populate('listing', '_id title images price location')
       .populate('lastMessage')
       .sort('-lastMessageAt')
-      .limit(50)
-      .lean()
-      .maxTimeMS(1000);
+      .lean();
 
+    // Group logic to handle multiple chats with same person
     const conversationMap = new Map();
     
     allConversations.forEach(conv => {
-      const otherParticipant = conv.participants.find(p => p._id.toString() !== req.userId.toString());
+      // Find the "other" person
+      const otherParticipant = conv.participants.find(p => !areIdsEqual(p._id, req.userId));
       
       if (!otherParticipant) {
         conversationMap.set(conv._id.toString(), conv);
@@ -37,7 +43,6 @@ router.get('/conversations', auth, async (req, res) => {
       } else {
         const existingTime = existing.lastMessageAt || existing.createdAt;
         const currentTime = conv.lastMessageAt || conv.createdAt;
-        
         if (currentTime && (!existingTime || new Date(currentTime) > new Date(existingTime))) {
           conversationMap.set(key, conv);
         }
@@ -53,10 +58,8 @@ router.get('/conversations', auth, async (req, res) => {
 
     res.json({ conversations });
   } catch (error) {
-    console.error(error);
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'Server error' });
-    }
+    console.error("Get Conversations Error:", error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -65,14 +68,12 @@ router.post('/conversations', auth, async (req, res) => {
   try {
     const { listingId, recipientId } = req.body;
 
-    if (!recipientId) {
-      return res.status(400).json({ error: 'Recipient ID required' });
-    }
-
-    if (req.userId.toString() === recipientId.toString()) {
+    if (!recipientId) return res.status(400).json({ error: 'Recipient ID required' });
+    if (areIdsEqual(req.userId, recipientId)) {
       return res.status(400).json({ error: 'Cannot create conversation with yourself' });
     }
 
+    // Try to find existing conversation
     let conversation = await Conversation.findOne({
       participants: { $all: [req.userId, recipientId] },
       participants: { $size: 2 }
@@ -82,47 +83,20 @@ router.post('/conversations', auth, async (req, res) => {
       .sort('-lastMessageAt -createdAt');
 
     if (!conversation) {
-      try {
-        conversation = new Conversation({
-          participants: [req.userId, recipientId],
-          listing: listingId || undefined
-        });
-        
-        await conversation.save();
-        await conversation.populate('participants', 'name email avatar role');
-        
-        if (listingId) {
-          await conversation.populate('listing', 'title images price location');
-        }
-      } catch (saveError) {
-        if (saveError.code === 11000 || saveError.name === 'MongoServerError') {
-          conversation = await Conversation.findOne({
-            participants: { $all: [req.userId, recipientId] },
-            participants: { $size: 2 }
-          })
-            .populate('participants', 'name email avatar role')
-            .populate('listing', 'title images price location')
-            .sort('-lastMessageAt -createdAt');
-          
-          if (!conversation) {
-            return res.status(409).json({ 
-              error: 'Conversation already exists',
-              message: 'A conversation with this user already exists. Please refresh the page.'
-            });
-          }
-        } else {
-          throw saveError;
-        }
-      }
+      // Create new
+      conversation = new Conversation({
+        participants: [req.userId, recipientId],
+        listing: listingId || undefined
+      });
+      await conversation.save();
+      await conversation.populate('participants', 'name email avatar role');
+      if (listingId) await conversation.populate('listing', 'title images price location');
     }
 
     res.json({ conversation });
   } catch (error) {
     console.error('Error creating conversation:', error);
-    res.status(500).json({ 
-      error: 'Server error',
-      message: error.message 
-    });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -132,17 +106,20 @@ router.get('/conversations/:conversationId/messages', auth, async (req, res) => 
     const { conversationId } = req.params;
     const { page = 1, limit = 50 } = req.query;
 
+    if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+      return res.status(404).json({ error: 'Invalid conversation ID' });
+    }
+
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) {
       return res.status(404).json({ error: 'Conversation not found' });
     }
 
-    // FIX: Use .some() and .toString() to compare ObjectIds correctly
-    const isParticipant = conversation.participants.some(
-      p => p.toString() === req.userId
-    );
+    // ROBUST CHECK: Ensure user is a participant
+    const isParticipant = conversation.participants.some(p => areIdsEqual(p, req.userId));
 
     if (!isParticipant) {
+      console.log(`Access Denied: User ${req.userId} is not in participants:`, conversation.participants);
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -152,21 +129,19 @@ router.get('/conversations/:conversationId/messages', auth, async (req, res) => 
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit));
 
+    // Mark as read
     await Message.updateMany(
       {
         conversation: conversationId,
         sender: { $ne: req.userId },
         read: false
       },
-      {
-        read: true,
-        readAt: new Date()
-      }
+      { read: true, readAt: new Date() }
     );
 
     res.json({ messages: messages.reverse() });
   } catch (error) {
-    console.error(error);
+    console.error("Get Messages Error:", error);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -177,21 +152,13 @@ router.post('/conversations/:conversationId/messages', auth, async (req, res) =>
     const { conversationId } = req.params;
     const { content } = req.body;
 
-    if (!content || !content.trim()) {
-      return res.status(400).json({ error: 'Message content required' });
-    }
+    if (!content || !content.trim()) return res.status(400).json({ error: 'Message content required' });
 
     const conversation = await Conversation.findById(conversationId);
-    if (!conversation) {
-      return res.status(404).json({ error: 'Conversation not found' });
-    }
+    if (!conversation) return res.status(404).json({ error: 'Conversation not found' });
 
-    // FIX: Use .some() and .toString() to compare ObjectIds correctly
-    const isParticipant = conversation.participants.some(
-      p => p.toString() === req.userId
-    );
-
-    if (!isParticipant) {
+    // Robust Check
+    if (!conversation.participants.some(p => areIdsEqual(p, req.userId))) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -210,64 +177,45 @@ router.post('/conversations/:conversationId/messages', auth, async (req, res) =>
 
     res.json({ message });
   } catch (error) {
-    console.error(error);
+    console.error("Send Message Error:", error);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Delete a message
+// Delete message
 router.delete('/messages/:messageId', auth, async (req, res) => {
   try {
-    const { messageId } = req.params;
+    const message = await Message.findById(req.params.messageId).populate('conversation');
+    if (!message) return res.status(404).json({ error: 'Message not found' });
 
-    const message = await Message.findById(messageId)
-      .populate('conversation', 'participants');
+    // Check participation
+    const isParticipant = message.conversation.participants.some(p => areIdsEqual(p, req.userId));
+    if (!isParticipant) return res.status(403).json({ error: 'Access denied' });
 
-    if (!message) {
-      return res.status(404).json({ error: 'Message not found' });
-    }
-
-    const conversation = message.conversation;
-    // FIX: Use .some() and .toString()
-    const isParticipant = conversation.participants.some(
-      p => p.toString() === req.userId
-    );
-
-    if (!isParticipant) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    if (message.sender.toString() !== req.userId.toString()) {
+    // Check ownership
+    if (!areIdsEqual(message.sender, req.userId)) {
       return res.status(403).json({ error: 'You can only delete your own messages' });
     }
 
-    await Message.findByIdAndDelete(messageId);
-
-    res.json({ message: 'Message deleted successfully' });
+    await Message.findByIdAndDelete(req.params.messageId);
+    res.json({ message: 'Message deleted' });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Get unread message count
+// Unread count
 router.get('/unread-count', auth, async (req, res) => {
   try {
-    const conversations = await Conversation.find({
-      participants: req.userId
-    }).select('_id');
-
+    const conversations = await Conversation.find({ participants: req.userId }).select('_id');
     const conversationIds = conversations.map(c => c._id);
-
     const unreadCount = await Message.countDocuments({
       conversation: { $in: conversationIds },
       sender: { $ne: req.userId },
       read: false
     });
-
     res.json({ unreadCount });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: 'Server error' });
   }
 });
