@@ -6,14 +6,17 @@ import { useTranslation } from 'react-i18next';
 
 const Profile = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  // 1. Get setUser from AuthContext to update global state instantly
+  const { user, setUser } = useAuth(); 
   const [activeTab, setActiveTab] = useState('profile');
+  
   const [profileData, setProfileData] = useState({
     name: '',
     phone: '',
     email: '',
     gender: ''
   });
+
   const [roommateProfile, setRoommateProfile] = useState({
     university: '',
     major: '',
@@ -42,6 +45,10 @@ const Profile = () => {
         email: user.email,
         gender: (user as any).gender || ''
       });
+      // Load existing roommate profile if available
+      if ((user as any).roommateProfile) {
+         setRoommateProfile({ ...roommateProfile, ...(user as any).roommateProfile });
+      }
     }
   }, [user]);
 
@@ -49,9 +56,18 @@ const Profile = () => {
     e.preventDefault();
     
     try {
-      await axios.put('/api/users/profile', profileData);
+      // 2. Capture the response
+      const response = await axios.put('/api/users/profile', profileData);
+      
+      // 3. Update Global Auth State immediately (No reload needed!)
+      // Ensure your backend returns the updated user object in response.data.user
+      if (response.data.user && setUser) {
+        setUser(response.data.user);
+      }
+      
       toast.success(t('profile.success'));
     } catch (error) {
+      console.error(error);
       toast.error(t('common.error'));
     }
   };
@@ -60,9 +76,16 @@ const Profile = () => {
     e.preventDefault();
     
     try {
-      await axios.put('/api/users/roommate-profile', roommateProfile);
+      const response = await axios.put('/api/users/roommate-profile', roommateProfile);
+      
+      // Update Global State for this too
+      if (response.data.user && setUser) {
+        setUser(response.data.user);
+      }
+
       toast.success(t('profile.success'));
     } catch (error) {
+      console.error(error);
       toast.error(t('common.error'));
     }
   };
@@ -116,6 +139,7 @@ const Profile = () => {
                 className="input"
                 value={profileData.email}
                 disabled
+                className="input bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
               />
             </div>
 
@@ -156,7 +180,7 @@ const Profile = () => {
               <label className="flex items-center">
                 <input
                   type="checkbox"
-                  className="mr-2"
+                  className="mr-2 w-5 h-5 text-primary-600 rounded"
                   checked={roommateProfile.lookingForRoommate}
                   onChange={(e) => setRoommateProfile({
                     ...roommateProfile,
@@ -167,7 +191,7 @@ const Profile = () => {
               </label>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">{t('profile.labels.uni')}</label>
                 <input
