@@ -4,7 +4,7 @@ import axios from '../config/axios';
 import { FiHeart, FiMessageCircle, FiEye, FiPlus } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { getImageUrl, getAvatarUrl } from '../utils/imageHelper';
-import { useTranslation } from 'react-i18next'; // Import Hook
+import { useTranslation } from 'react-i18next';
 
 interface BlogPost {
   _id: string;
@@ -14,7 +14,7 @@ interface BlogPost {
   tags?: string[];
   customId?: string;
   rating?: number;
-  author: {
+  author?: { // Made optional to prevent crashes
     name: string;
     avatar?: string;
   };
@@ -26,7 +26,7 @@ interface BlogPost {
 }
 
 const Blog = () => {
-  const { t } = useTranslation(); // Initialize
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,6 @@ const Blog = () => {
   const [sortBy, setSortBy] = useState('-createdAt');
   const [allTags, setAllTags] = useState<string[]>([]);
 
-  // Updated categories with translation keys
   const categories = [
     { value: '', label: t('blog.all') },
     { value: 'tips', label: t('blog.categories.tips') },
@@ -96,7 +95,6 @@ const Blog = () => {
   };
 
   const getCategoryLabel = (category: string) => {
-    // Map backend category value to translation key
     const keyMap: Record<string, string> = {
       'tips': 'tips',
       'experience': 'experience',
@@ -104,8 +102,6 @@ const Blog = () => {
       'scam-report': 'scamReport',
       'discussion': 'discussion'
     };
-    
-    // Return translated string
     return keyMap[category] ? t(`blog.categories.${keyMap[category]}`) : category;
   };
 
@@ -127,7 +123,6 @@ const Blog = () => {
         )}
       </div>
 
-      {/* Search and Sort Bar */}
       <div className="card p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <input
@@ -145,16 +140,14 @@ const Blog = () => {
           >
             <option value="-createdAt">{t('listings.sort.newest')}</option>
             <option value="createdAt">{t('listings.sort.newest').replace('Mới', 'Cũ').replace('Newest', 'Oldest')}</option>
-            <option value="likes">Like</option>
-            <option value="views">View</option>
-            <option value="rating">{t('listings.sort.rating')}</option>
+            <option value="likes">Like (Popular)</option>
+            <option value="views">View (High to Low)</option>
           </select>
           <button onClick={fetchPosts} className="btn-primary">
             {t('common.search')}
           </button>
         </div>
 
-        {/* Category Filter */}
         <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
           {categories.map((category) => (
             <button
@@ -171,7 +164,6 @@ const Blog = () => {
           ))}
         </div>
 
-        {/* Tags Filter */}
         {allTags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             <span className="text-sm text-gray-600 dark:text-gray-400 self-center mr-2">{t('blog.tags')}</span>
@@ -202,7 +194,6 @@ const Blog = () => {
         )}
       </div>
 
-      {/* Blog Posts */}
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -215,7 +206,6 @@ const Blog = () => {
               to={`/blog/${post._id}`}
               className="card overflow-hidden group"
             >
-              {/* Image */}
               {post.images && post.images[0] && (
                 <div className="h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
                   <img
@@ -226,17 +216,11 @@ const Blog = () => {
                 </div>
               )}
 
-              {/* Content */}
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
                   <span className={`text-xs px-2 py-1 rounded ${getCategoryBadgeColor(post.category)}`}>
                     {getCategoryLabel(post.category)}
                   </span>
-                  {post.customId && (
-                    <span className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                      ID: {post.customId}
-                    </span>
-                  )}
                   {post.tags && post.tags.length > 0 && (
                     <div className="flex gap-1 flex-wrap">
                       {post.tags.slice(0, 2).map((tag, idx) => (
@@ -256,34 +240,31 @@ const Blog = () => {
                   {post.content.substring(0, 150)}...
                 </p>
 
-                {/* Author & Stats */}
                 <div className="flex items-center justify-between text-sm">
+                  {/* FIXED: Safe Navigation for Author */}
                   <div className="flex items-center">
                     <img
-                      src={getAvatarUrl(post.author.avatar)}
-                      alt={post.author.name}
+                      src={getAvatarUrl(post.author?.avatar)}
+                      alt={post.author?.name || 'User'}
                       className="w-6 h-6 rounded-full mr-2"
                     />
-                    <span className="text-gray-700 dark:text-gray-300">{post.author.name}</span>
+                    <span className="text-gray-700 dark:text-gray-300">
+                      {post.author?.name || t('common.unknownUser', 'Người dùng ẩn')}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-3 text-gray-500">
-                    {post.rating && post.rating > 0 && (
-                      <span className="flex items-center text-yellow-500">
-                        ⭐ {post.rating.toFixed(1)}
-                      </span>
-                    )}
                     <span className="flex items-center">
                       <FiHeart size={14} className="mr-1" />
-                      {post.likes.length}
+                      {post.likes ? post.likes.length : 0}
                     </span>
                     <span className="flex items-center">
                       <FiMessageCircle size={14} className="mr-1" />
-                      {post.comments.length}
+                      {post.comments ? post.comments.length : 0}
                     </span>
                     <span className="flex items-center">
                       <FiEye size={14} className="mr-1" />
-                      {post.views}
+                      {post.views || 0}
                     </span>
                   </div>
                 </div>

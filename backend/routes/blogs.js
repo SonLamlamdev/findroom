@@ -3,80 +3,126 @@ const router = express.Router();
 const Blog = require('../models/Blog');
 const { auth } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const mongoose = require('mongoose');
 
-// Get all blogs
+// Get all blogs (Refactored to use Aggregation for correct Sorting)
 router.get('/', async (req, res) => {
   try {
     const { 
       category, 
       search, 
       tag,
-      sort = '-createdAt', // -createdAt, -likes, -views, -rating
+      sort = '-createdAt', 
       page = 1, 
       limit = 10 
     } = req.query;
-    
-    const query = { published: true };
 
-    // Filter by category
+    const pipeline = [];
+
+    // 1. MATCH: Filter published blogs
+    const matchStage = { published: true };
+
     if (category) {
-      query.category = category;
+      matchStage.category = category;
     }
 
-    // Filter by tag
     if (tag) {
-      query.tags = { $in: [new RegExp(tag, 'i')] };
+      matchStage.tags = { $in: [new RegExp(tag, 'i')] };
     }
 
-    // Search by keyword
     if (search) {
-      query.$or = [
+      matchStage.$or = [
         { title: { $regex: search, $options: 'i' } },
         { content: { $regex: search, $options: 'i' } },
         { tags: { $in: [new RegExp(search, 'i')] } }
       ];
     }
+    
+    pipeline.push({ $match: matchStage });
 
-    // Sort options
-    let sortOption = '-createdAt';
-    if (sort === 'likes') sortOption = '-likes';
-    else if (sort === 'views') sortOption = '-views';
-    else if (sort === 'rating') sortOption = '-rating';
-    else if (sort === 'newest') sortOption = '-createdAt';
-    else if (sort === 'oldest') sortOption = 'createdAt';
+    // 2. ADD FIELDS: Calculate 'likesCount' for sorting
+    pipeline.push({
+      $addFields: {
+        likesCount: { $size: { $ifNull: ["$likes", []] } },
+        commentsCount: { $size: { $ifNull: ["$comments", []] } }
+      }
+    });
 
+    // 3. SORT: Handle various sort options
+    let sortStage = {};
+    if (sort === 'likes' || sort === '-likes') {
+      sortStage = { likesCount: -1 };
+    } else if (sort === 'views' || sort === '-views') {
+      sortStage = { views: -1 };
+    } else if (sort === 'oldest' || sort === 'createdAt') {
+      sortStage = { createdAt: 1 };
+    } else {
+      // Default: Newest
+      sortStage = { createdAt: -1 };
+    }
+    pipeline.push({ $sort: sortStage });
+
+    // 4. PAGINATION: Skip and Limit
     const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 50);
     const safePage = Math.max(Number(page) || 1, 1);
     const skip = (safePage - 1) * safeLimit;
 
-    const [blogs, total] = await Promise.all([
-      Blog.find(query)
-        .populate('author', '_id name avatar')
-        .sort(sortOption)
-        .limit(safeLimit)
-        .skip(skip)
-        .lean()
-        .maxTimeMS(1000),
-      Blog.countDocuments(query).maxTimeMS(500)
-    ]);
-
-    // Calculate rating for each blog (based on likes/views ratio)
-    const blogsWithRating = blogs.map(blog => {
-      const blogObj = { ...blog };
-      // Simple rating: likes / (views + 1) * 5
-      blogObj.rating = blog.views > 0 
-        ? ((blog.likes?.length || 0) / (blog.views + 1)) * 5 
-        : 0;
-      return blogObj;
+    // Use $facet to get both data and count in one query
+    pipeline.push({
+      $facet: {
+        blogs: [
+          { $skip: skip },
+          { $limit: safeLimit },
+          // 5. LOOKUP: Manually populate Author (equivalent to .populate)
+          {
+            $lookup: {
+              from: 'users', // Ensure this matches your collection name in DB (usually 'users')
+              localField: 'author',
+              foreignField: '_id',
+              as: 'authorDetails'
+            }
+          },
+          // 6. UNWIND: Lookup returns an array, we need the first object
+          {
+            $unwind: {
+              path: '$authorDetails',
+              preserveNullAndEmptyArrays: true // Vital: Keeps blog even if author is deleted
+            }
+          },
+          // 7. PROJECT: Clean up the output to match your frontend interface
+          {
+            $project: {
+              title: 1,
+              content: 1,
+              category: 1,
+              tags: 1,
+              images: 1,
+              views: 1,
+              likes: 1,
+              comments: 1,
+              createdAt: 1,
+              likesCount: 1,
+              author: {
+                _id: '$authorDetails._id',
+                name: '$authorDetails.name',
+                avatar: '$authorDetails.avatar'
+              }
+            }
+          }
+        ],
+        totalCount: [
+          { $count: 'count' }
+        ]
+      }
     });
 
-    // Re-sort if sort by rating
-    if (sort === 'rating') {
-      blogsWithRating.sort((a, b) => b.rating - a.rating);
-    }
+    const result = await Blog.aggregate(pipeline).maxTimeMS(2000);
+    
+    const blogs = result[0].blogs;
+    const total = result[0].totalCount[0] ? result[0].totalCount[0].count : 0;
 
     res.json({
-      blogs: sort === 'rating' ? blogsWithRating : blogs,
+      blogs,
       pagination: {
         page: safePage,
         limit: safeLimit,
@@ -84,8 +130,9 @@ router.get('/', async (req, res) => {
         pages: Math.ceil(total / safeLimit)
       }
     });
+
   } catch (error) {
-    console.error(error);
+    console.error("Blog fetch error:", error);
     if (!res.headersSent) {
       res.status(500).json({ error: 'Server error' });
     }
@@ -95,6 +142,11 @@ router.get('/', async (req, res) => {
 // Get single blog
 router.get('/:id', async (req, res) => {
   try {
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ error: 'Blog not found' });
+    }
+
     const blog = await Blog.findById(req.params.id)
       .populate('author', '_id name avatar')
       .populate('comments.user', '_id name avatar')
@@ -112,6 +164,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({ blog });
   } catch (error) {
+    console.error(error);
     if (!res.headersSent) {
       res.status(500).json({ error: 'Server error' });
     }
@@ -244,11 +297,3 @@ router.post('/:id/comments', auth, async (req, res) => {
 });
 
 module.exports = router;
-
-
-
-
-
-
-
-
