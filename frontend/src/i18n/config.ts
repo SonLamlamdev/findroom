@@ -658,7 +658,7 @@ const resources = {
         post: 'Post Listing',
         profile: 'Profile',
         saved: 'Saved Listings',
-        savedRoommates: 'Saved Roommates',
+        savedRoommates: 'Saved Roommate',
         messages: 'Messages',
         stayed: 'Stayed History',
         admin: 'Admin Panel',
