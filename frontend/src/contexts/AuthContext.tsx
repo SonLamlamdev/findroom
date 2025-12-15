@@ -3,12 +3,16 @@ import axios from '../config/axios';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../utils/errorHandler';
 
+// Updated to match your real DB structure
 interface User {
-  id: string;
+  id: string; // Kept for compatibility
+  _id: string; // Added for MongoDB
   email: string;
   name: string;
   role: 'tenant' | 'landlord' | 'admin';
   avatar?: string;
+  phone?: string;
+  roommateProfile?: any; // To store roommate data
   preferences?: {
     language: string;
     theme: string;
@@ -22,6 +26,7 @@ interface AuthContextType {
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  setUser: (user: User | null) => void; // <--- NEW: Expose setter
 }
 
 interface RegisterData {
@@ -87,7 +92,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       const message = getErrorMessage(error, 'Đăng nhập thất bại');
       toast.error(message);
-      // Throw a new error with string message instead of the original error object
       throw new Error(message);
     }
   };
@@ -105,22 +109,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       const message = getErrorMessage(error, 'Đăng ký thất bại');
       toast.error(message);
-      // Throw a new error with string message instead of the original error object
       throw new Error(message);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
+    // Pass setUser here so other components can use it
+    <AuthContext.Provider value={{ user, token, login, register, logout, loading, setUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
-
-
-
-
-
-
-
-

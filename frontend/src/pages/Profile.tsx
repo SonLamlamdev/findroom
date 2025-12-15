@@ -6,8 +6,8 @@ import { useTranslation } from 'react-i18next';
 
 const Profile = () => {
   const { t } = useTranslation();
-  // 1. Get setUser from AuthContext to update global state instantly
-  const { user, setUser } = useAuth(); 
+  // Now getting setUser from context
+  const { user, setUser } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   
   const [profileData, setProfileData] = useState({
@@ -43,11 +43,11 @@ const Profile = () => {
         name: user.name,
         phone: user.phone || '',
         email: user.email,
+        // Safe access because we updated the User interface
         gender: (user as any).gender || ''
       });
-      // Load existing roommate profile if available
-      if ((user as any).roommateProfile) {
-         setRoommateProfile({ ...roommateProfile, ...(user as any).roommateProfile });
+      if (user.roommateProfile) {
+         setRoommateProfile({ ...roommateProfile, ...user.roommateProfile });
       }
     }
   }, [user]);
@@ -56,18 +56,15 @@ const Profile = () => {
     e.preventDefault();
     
     try {
-      // 2. Capture the response
       const response = await axios.put('/api/users/profile', profileData);
       
-      // 3. Update Global Auth State immediately (No reload needed!)
-      // Ensure your backend returns the updated user object in response.data.user
-      if (response.data.user && setUser) {
+      // INSTANT UPDATE: Update global state with new user data from backend
+      if (response.data.user) {
         setUser(response.data.user);
       }
       
       toast.success(t('profile.success'));
     } catch (error) {
-      console.error(error);
       toast.error(t('common.error'));
     }
   };
@@ -78,14 +75,13 @@ const Profile = () => {
     try {
       const response = await axios.put('/api/users/roommate-profile', roommateProfile);
       
-      // Update Global State for this too
-      if (response.data.user && setUser) {
+      // INSTANT UPDATE here too
+      if (response.data.user) {
         setUser(response.data.user);
       }
 
       toast.success(t('profile.success'));
     } catch (error) {
-      console.error(error);
       toast.error(t('common.error'));
     }
   };
@@ -136,10 +132,9 @@ const Profile = () => {
               <label className="block text-sm font-medium mb-2">{t('profile.labels.email')}</label>
               <input
                 type="email"
-                className="input"
+                className="input bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
                 value={profileData.email}
                 disabled
-                className="input bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
               />
             </div>
 
