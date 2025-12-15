@@ -16,7 +16,7 @@ const resources = {
         post: 'Đăng bài',
         profile: 'Hồ sơ',
         saved: 'Tin đã lưu',
-        savedRoommates: 'Hồ sơ ở ghép đã lưu',
+        savedRoommates: 'Đã lưu ghép trọ',
         messages: 'Tin nhắn',
         stayed: 'Phòng đã ở',
         admin: 'Quản trị',
