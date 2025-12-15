@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { FiSun, FiMoon, FiMenu, FiX, FiUser, FiHeart, FiGrid, FiMessageCircle, FiShield } from 'react-icons/fi';
+// Added FiClock to the imports
+import { FiSun, FiMoon, FiMenu, FiX, FiUser, FiHeart, FiGrid, FiMessageCircle, FiShield, FiClock } from 'react-icons/fi';
 import { useState } from 'react';
 import { getAvatarUrl } from '../utils/imageHelper';
 
@@ -39,13 +40,13 @@ const Navbar = () => {
             <Link to="/map" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
               {t('nav.map')}
             </Link>
-            {/* Chỉ hiện "Tìm bạn cùng phòng" cho người thuê */}
+            {/* Only show "Find Roommate" for tenants */}
             {(!user || user.role === 'tenant') && (
               <Link to="/roommate-finder" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
                 {t('nav.roommate')}
               </Link>
             )}
-            {/* Tính năng đặc trưng cho chủ trọ */}
+            {/* Landlord/Admin features */}
             {user && (user.role === 'landlord' || user.role === 'admin') && (
               <>
                 <Link to="/create-listing" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
@@ -123,15 +124,15 @@ const Navbar = () => {
                           className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
                           onClick={() => setUserMenuOpen(false)}
                         >
-                          {/* FIXED: Changed from t('nav.saved') to t('nav.savedRoommates') */}
                           <FiHeart className="inline mr-2" /> {t('nav.savedRoommates')}
                         </Link>
+                        {/* ADDED ICON HERE */}
                         <Link
                           to="/stayed"
                           className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
                           onClick={() => setUserMenuOpen(false)}
                         >
-                          {t('nav.stayed')}
+                          <FiClock className="inline mr-2" /> {t('nav.stayed')}
                         </Link>
                       </>
                     )}
