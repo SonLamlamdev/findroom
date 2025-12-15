@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from '../config/axios';
 import { FiMapPin, FiHome, FiUsers, FiCheck, FiHeart, FiStar, FiMessageCircle } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../utils/errorHandler';
 import { getImageUrl, getAvatarUrl } from '../utils/imageHelper';
-import { useTranslation } from 'react-i18next'; // Import i18n hook
+import { useTranslation } from 'react-i18next';
 
 interface Listing {
   _id: string;
@@ -58,7 +57,7 @@ interface Review {
 }
 
 const ListingDetail = () => {
-  const { t } = useTranslation(); // Initialize translation
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -73,7 +72,6 @@ const ListingDetail = () => {
   const [reviewComment, setReviewComment] = useState('');
   const [stayedAt, setStayedAt] = useState('');
 
-  // Mapping for Amenities (Database Value -> Translation Key)
   const amenityMapping: { [key: string]: string } = {
     'Điều hòa': 'ac',
     'Nóng lạnh': 'heater',
@@ -89,7 +87,6 @@ const ListingDetail = () => {
     'Gần bệnh viện': 'hospital'
   };
 
-  // Fallback image function
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = 'https://placehold.co/600x400?text=Image+Not+Found';
   };
@@ -216,6 +213,9 @@ const ListingDetail = () => {
     }).format(price);
   };
 
+  // Helper to check if current user is the owner
+  const isOwner = user && listing && user._id === listing.landlord._id;
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -326,7 +326,6 @@ const ListingDetail = () => {
               {listing.amenities.map((amenity, index) => (
                 <div key={index} className="flex items-center">
                   <FiCheck className="text-green-500 mr-2" />
-                  {/* Translate amenity if mapping exists, otherwise fallback to raw text */}
                   {amenityMapping[amenity] 
                     ? t(`create.amenities.${amenityMapping[amenity]}`) 
                     : amenity}
@@ -348,7 +347,8 @@ const ListingDetail = () => {
           <div className="card p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold">{t('listingDetail.reviews.title')}</h2>
-              {user && user.role === 'tenant' && hasStayed && !showReviewForm && (
+              {/* Only show "Write Review" if user is tenant, has stayed, and form is hidden */}
+              {user && !isOwner && hasStayed && !showReviewForm && (
                 <button
                   onClick={() => setShowReviewForm(true)}
                   className="btn-primary"
@@ -484,7 +484,8 @@ const ListingDetail = () => {
               </div>
             </div>
 
-            {user && user.role === 'tenant' && (
+            {/* FIXED: Show button for any logged-in user who is NOT the owner */}
+            {user && !isOwner && (
               <button
                 onClick={() => navigate(`/messages/${listing._id}/${listing.landlord._id}`)}
                 className="w-full btn-primary mb-3 flex items-center justify-center"
@@ -494,7 +495,8 @@ const ListingDetail = () => {
               </button>
             )}
             
-            {user && user.role === 'tenant' && (
+            {/* Save Button & Stayed Logic - Allowed for everyone except owner */}
+            {user && !isOwner && (
               <>
                 <button
                   onClick={handleSaveToggle}
