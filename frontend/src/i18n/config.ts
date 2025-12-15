@@ -1009,7 +1009,7 @@ const resources = {
         title: "Saved Listings",
         empty: "You haven't saved any listings yet",
         explore: "Explore Listings",
-        saved_roommate: "Saved Roommates"
+        savedroommates: "Saved Roommates"
       },
       roommate: {
         title: "Find Roommate",
