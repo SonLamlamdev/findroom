@@ -507,14 +507,138 @@ const resources = {
         }
       },
       about: {
-        title:{
+        title: {
           title1: "Về FindRoom",
           title2: "Hành trình kiến tạo không gian sống an toàn, tiện nghi và minh bạch dành cho sinh viên Việt Nam."
         },
-        intro:{
-          intro_title: "Câu chuyện của chúng tôi",
-          content1: 'Là những người từng trải qua quãng đời sinh viên, chúng tôi thấu hiểu sâu sắc nỗi vất vả khi đi tìm phòng trọ: thông tin thiếu minh bạch, hình ảnh "treo đầu dê bán thịt chó", và đau đớn nhất là vấn nạn lừa đảo tiền cọc.',
-          content2: "FindRoom được thành lập với một mục tiêu duy nhất: Giải quyết triệt để những khó khăn đó.Chúng tôi không chỉ xây dựng một trang web đăng tin, mà đang xây dựng một cộng đồng nơi niềm tin được đặt lên hàng đầu."
+        story: {
+          title: "Câu chuyện của chúng tôi",
+          p1: "Là những người từng trải qua quãng đời sinh viên, chúng tôi thấu hiểu sâu sắc nỗi vất vả khi đi tìm phòng trọ: thông tin thiếu minh bạch, hình ảnh \"treo đầu dê bán thịt chó\", và đau đớn nhất là vấn nạn lừa đảo tiền cọc.",
+          p2_prefix: "FindRoom được thành lập với một mục tiêu duy nhất:",
+          p2_strong: "Giải quyết triệt để những khó khăn đó.",
+          p2_suffix: "Chúng tôi không chỉ xây dựng một trang web đăng tin, mà đang xây dựng một cộng đồng nơi niềm tin được đặt lên hàng đầu."
+        },
+        mission: {
+          title: "Sứ mệnh",
+          content: "Kết nối sinh viên với những chủ trọ uy tín thông qua công nghệ, tạo ra môi trường thuê phòng an toàn, minh bạch và nhanh chóng nhất."
+        },
+        vision: {
+          title: "Tầm nhìn",
+          content: "Trở thành nền tảng tìm kiếm nhà trọ số 1 dành cho sinh viên, nơi mà việc tìm chỗ ở dễ dàng như việc lướt mạng xã hội."
+        },
+        values: {
+          title: "Cam kết của FindRoom",
+          v1_title: "Thông tin xác thực",
+          v1_desc: "Chúng tôi nỗ lực xác minh danh tính chủ trọ và kiểm duyệt tin đăng để loại bỏ tin rác.",
+          v2_title: "Hoàn toàn miễn phí",
+          v2_desc: "Miễn phí 100% trọn đời cho sinh viên tìm phòng. Không phí môi giới, không phí ẩn.",
+          v3_title: "Hỗ trợ tận tâm",
+          v3_desc: "Đội ngũ hỗ trợ luôn sẵn sàng lắng nghe và giải quyết các khiếu nại của người dùng."
+        },
+        cta: {
+          title: "Bạn đã sẵn sàng tìm nơi ở mới?",
+          btn_view: "Xem danh sách phòng",
+          btn_register: "Đăng ký tài khoản"
+        }
+      },
+      faq: {
+        title: "Câu hỏi thường gặp",
+        subtitle: "Chúng tôi ở đây để giải đáp mọi thắc mắc của bạn về quá trình tìm phòng và cho thuê.",
+        tabs: {
+          tenant: "Cho Người Thuê",
+          landlord: "Cho Chủ Trọ"
+        },
+        footer: {
+          text: "Vẫn chưa tìm thấy câu trả lời?",
+          link: "Liên hệ bộ phận hỗ trợ"
+        },
+        tenant: {
+          q1: "Tìm phòng trên FindRoom có mất phí không?",
+          a1: "Hoàn toàn miễn phí! FindRoom cam kết không thu bất kỳ khoản phí môi giới nào từ sinh viên/người đi thuê phòng.",
+          q2: "Làm sao để tránh bị lừa đảo khi thuê phòng?",
+          a2: "Tuyệt đối KHÔNG chuyển tiền cọc khi chưa đến xem phòng trực tiếp và gặp chủ trọ. Hãy ưu tiên các tin đăng từ chủ trọ có tích xanh (Đã xác thực) và luôn ký hợp đồng thuê rõ ràng.",
+          q3: "Tôi có thể hủy lịch hẹn xem phòng không?",
+          a3: "Có. Nếu bạn bận, vui lòng vào phần 'Quản lý lịch hẹn' để hủy hoặc nhắn tin báo cho chủ trọ biết. Điều này giúp giữ uy tín cho tài khoản của bạn.",
+          q4: "Chức năng 'Lưu tin' dùng để làm gì?",
+          a4: "Giúp bạn lưu lại những căn phòng ưng ý để dễ dàng so sánh giá cả và vị trí trước khi đưa ra quyết định cuối cùng."
+        },
+        landlord: {
+          q1: "Đăng tin cho thuê có mất phí không?",
+          a1: "Hiện tại FindRoom đang hỗ trợ miễn phí đăng tin cho tất cả chủ trọ để xây dựng cộng đồng. Trong tương lai có thể sẽ có các gói dịch vụ cao cấp (đẩy tin, tin nổi bật) có phí.",
+          q2: "Làm sao để tin đăng của tôi được nhiều người xem?",
+          a2: "Hình ảnh đẹp, sáng sủa và thông tin chi tiết là chìa khóa. Hãy điền đầy đủ giá điện, nước, tiện nghi và mô tả kỹ về an ninh khu vực.",
+          q3: "Làm thế nào để được cấp tích xanh 'Chủ trọ xác thực'?",
+          a3: "Bạn cần cập nhật hồ sơ cá nhân và tải lên ảnh CCCD/CMND để hệ thống xác minh. Chủ trọ có tích xanh thường được người thuê tin tưởng hơn gấp 3 lần.",
+          q4: "Tôi có thể ẩn tin khi phòng đã cho thuê không?",
+          a4: "Được. Bạn vào phần 'Quản lý tin đăng' và chuyển trạng thái tin sang 'Đã ẩn' hoặc 'Đã cho thuê' để không bị làm phiền."
+        }
+      },
+      terms: {
+        title: "Điều khoản sử dụng",
+        lastUpdated: "Cập nhật lần cuối: 14/12/2025",
+        intro: "Chào mừng bạn đến với FindRoom. Khi truy cập và sử dụng nền tảng này, bạn đồng ý tuân thủ các điều khoản dưới đây. Vui lòng đọc kỹ để bảo vệ quyền lợi của chính mình.",
+        s1: {
+          title: "1. Tài khoản người dùng",
+          l1: "Người dùng chịu trách nhiệm bảo mật thông tin đăng nhập (email, mật khẩu).",
+          l2: "Bạn phải cung cấp thông tin chính xác khi đăng ký (tên thật, số điện thoại liên lạc).",
+          l3: "Không được sử dụng tài khoản của người khác hoặc mạo danh bất kỳ cá nhân/tổ chức nào."
+        },
+        s2: {
+          title: "2. Quy định đăng tin (Dành cho Chủ trọ)",
+          l1: "Hình ảnh thực tế: Hình ảnh phòng trọ phải là ảnh thật, không sử dụng ảnh minh họa lấy từ internet gây hiểu lầm.",
+          l2: "Giá cả minh bạch: Phải niêm yết giá thuê chính xác, bao gồm cả giá điện, nước và các phí dịch vụ khác (nếu có).",
+          l3: "Thông tin chính xác: Mô tả đúng hiện trạng phòng (diện tích, nội thất, tiện nghi).",
+          l4: "FindRoom có quyền từ chối hoặc xóa các tin đăng vi phạm, thiếu thông tin hoặc có dấu hiệu lừa đảo mà không cần báo trước."
+        },
+        s3: {
+          title: "3. Các hành vi bị nghiêm cấm",
+          l1: "Những hành vi lừa đảo.",
+          l2: "Sử dụng ngôn từ thiếu văn hóa, quấy rối hoặc đe dọa người dùng khác.",
+          l3: "Đăng tải nội dung đồi trụy, chính trị hoặc vi phạm pháp luật Việt Nam.",
+          l4: "Spam tin đăng hoặc tạo nhiều tài khoản ảo để thao túng đánh giá."
+        },
+        s4: {
+          title: "4. Miễn trừ trách nhiệm",
+          intro: "FindRoom là nền tảng công nghệ trung gian kết nối người cho thuê và người cần thuê. Chúng tôi nỗ lực tối đa để xác thực danh tính (thông qua dấu tích xanh) và kiểm duyệt tin đăng, tuy nhiên:",
+          l1: "FindRoom không chịu trách nhiệm pháp lý đối với các giao dịch tiền bạc, hợp đồng thuê nhà diễn ra giữa Chủ trọ và Người thuê.",
+          l2: "Người thuê cần tự trang bị kiến thức, đến xem phòng trực tiếp và ký hợp đồng rõ ràng trước khi giao dịch tiền bạc.",
+          l3: "Chúng tôi không đảm bảo 100% tính chính xác của mọi tin đăng do người dùng tạo ra."
+        },
+        s5: {
+          title: "5. Điều khoản bổ sung",
+          content: "Chúng tôi có quyền thay đổi, chỉnh sửa các điều khoản này bất cứ lúc nào để phù hợp với tình hình thực tế. Các thay đổi sẽ có hiệu lực ngay khi được đăng tải trên website."
+        }
+      },
+      privacy: {
+        title: "Chính sách bảo mật",
+        subtitle: "Cam kết bảo vệ thông tin cá nhân của bạn",
+        intro: "Tại FindRoom, chúng tôi hiểu rằng quyền riêng tư là vô cùng quan trọng. Chính sách này mô tả chi tiết cách chúng tôi thu thập, sử dụng và bảo vệ thông tin cá nhân của bạn khi sử dụng nền tảng.",
+        s1: {
+          title: "1. Dữ liệu chúng tôi thu thập",
+          intro: "Chúng tôi chỉ thu thập những thông tin cần thiết để vận hành dịch vụ:",
+          l1: "Thông tin định danh: Họ tên, địa chỉ email, số điện thoại, và ảnh đại diện (avatar).",
+          l2: "Dữ liệu hoạt động: Lịch sử xem phòng, các phòng đã lưu, và lịch sử đánh giá."
+        },
+        s2: {
+          title: "2. Phạm vi sử dụng thông tin",
+          l1: "Xác thực tài khoản: Đảm bảo môi trường an toàn, loại bỏ các tài khoản ảo hoặc lừa đảo."
+        },
+        s3: {
+          title: "3. Chia sẻ thông tin",
+          subtitle: "Cam kết 3 KHÔNG:",
+          l1: "KHÔNG bán dữ liệu cá nhân cho bên thứ ba.",
+          l2: "KHÔNG chia sẻ thông tin cho các công ty quảng cáo/tiếp thị.",
+          l3: "KHÔNG công khai thông tin nhạy cảm lên website."
+        },
+        s4: {
+          title: "4. Bảo mật dữ liệu",
+          content: "Mọi thông tin cá nhân được lưu trữ trên máy chủ bảo mật. Mật khẩu của người dùng được mã hóa một chiều (Hashing) trước khi lưu vào cơ sở dữ liệu, đảm bảo ngay cả nhân viên của FindRoom cũng không thể biết mật khẩu của bạn."
+        },
+        s5: {
+          title: "5. Quyền của người dùng",
+          intro: "Bạn có toàn quyền kiểm soát dữ liệu của mình:",
+          l1: "Chỉnh sửa: Bạn có thể cập nhật thông tin cá nhân bất cứ lúc nào trong trang \"Hồ sơ\".",
+          l2: "Xóa tài khoản: Bạn có quyền yêu cầu xóa vĩnh viễn tài khoản và toàn bộ dữ liệu liên quan khỏi hệ thống của chúng tôi bằng cách liên hệ với đội ngũ hỗ trợ."
         }
       }
     }
@@ -1024,14 +1148,138 @@ const resources = {
         }
       },
       about: {
-        title:{
+        title: {
           title1: "About FindRoom",
-          title2: "The mission to craft safe, amenity-rich, and transparent living experiences for Vietnamese students."
+          title2: "The journey to create a safe, convenient, and transparent living space for Vietnamese students."
         },
-        intro:{
-          intro_title: "Our story",
-          content1: "Having experienced student life firsthand, we are intimately aware of the hardships involved in finding accommodation: opaque information, deceptive advertising, and the most agonizing issue of all—deposit fraud.",
-          content2: "FindRoom was established with one sole mission: to resolve these issues once and for all. We are building more than just a listing website; we are creating a community where trust comes first."
+        story: {
+          title: "Our Story",
+          p1: "Having experienced student life firsthand, we deeply understand the hardships of finding a room: lack of transparency, \"bait-and-switch\" images, and most painfully, deposit fraud issues.",
+          p2_prefix: "FindRoom was founded with a single goal:",
+          p2_strong: "To thoroughly solve these difficulties.",
+          p2_suffix: "We are not just building a listing website, but building a community where trust comes first."
+        },
+        mission: {
+          title: "Mission",
+          content: "Connecting students with reputable landlords through technology, creating the safest, most transparent, and fastest rental environment."
+        },
+        vision: {
+          title: "Vision",
+          content: "To become the #1 accommodation finder platform for students, where finding a place to live is as easy as scrolling through social media."
+        },
+        values: {
+          title: "FindRoom's Commitment",
+          v1_title: "Verified Information",
+          v1_desc: "We strive to verify landlord identities and moderate listings to eliminate spam.",
+          v2_title: "Completely Free",
+          v2_desc: "100% free for life for students finding rooms. No brokerage fees, no hidden fees.",
+          v3_title: "Dedicated Support",
+          v3_desc: "Our support team is always ready to listen and resolve user complaints."
+        },
+        cta: {
+          title: "Ready to find your new place?",
+          btn_view: "Browse Listings",
+          btn_register: "Register Account"
+        }
+      },
+      faq: {
+        title: "Frequently Asked Questions",
+        subtitle: "We are here to answer all your questions about the rental process.",
+        tabs: {
+          tenant: "For Tenants",
+          landlord: "For Landlords"
+        },
+        footer: {
+          text: "Still haven't found an answer?",
+          link: "Contact Support"
+        },
+        tenant: {
+          q1: "Is finding a room on FindRoom free?",
+          a1: "Completely free! FindRoom commits to zero brokerage fees for students/tenants.",
+          q2: "How to avoid rental scams?",
+          a2: "Absolutely DO NOT transfer deposit money without seeing the room in person and meeting the landlord. Prioritize listings from landlords with a Blue Check (Verified) and always sign a clear contract.",
+          q3: "Can I cancel a viewing appointment?",
+          a3: "Yes. If you are busy, please go to 'Appointment Management' to cancel or message the landlord. This helps maintain your account credibility.",
+          q4: "What is the 'Save Listing' feature for?",
+          a4: "It helps you save rooms you like to easily compare prices and locations before making a final decision."
+        },
+        landlord: {
+          q1: "Is posting a listing free?",
+          a1: "Currently, FindRoom supports free posting for all landlords to build the community. In the future, there may be premium paid services (pushing listings, featured listings).",
+          q2: "How do I get more views on my listing?",
+          a2: "Beautiful, bright photos and detailed information are key. Fill in full details about electricity, water prices, amenities, and security descriptions.",
+          q3: "How do I get the 'Verified Landlord' blue check?",
+          a3: "You need to update your profile and upload your ID card for system verification. Verified landlords are trusted 3x more by tenants.",
+          q4: "Can I hide a listing when rented?",
+          a4: "Yes. Go to 'Listing Management' and change the status to 'Hidden' or 'Rented' to stop receiving inquiries."
+        }
+      },
+      terms: {
+        title: "Terms of Use",
+        lastUpdated: "Last Updated: 14/12/2025",
+        intro: "Welcome to FindRoom. By accessing and using this platform, you agree to comply with the following terms. Please read carefully to protect your rights.",
+        s1: {
+          title: "1. User Account",
+          l1: "Users are responsible for the security of their login information (email, password).",
+          l2: "You must provide accurate information when registering (real name, contact phone number).",
+          l3: "Do not use another person's account or impersonate any individual/organization."
+        },
+        s2: {
+          title: "2. Posting Rules (For Landlords)",
+          l1: "Real Images: Room photos must be real, do not use misleading illustrations from the internet.",
+          l2: "Transparent Pricing: Exact rental prices must be listed, including electricity, water, and other service fees (if any).",
+          l3: "Accurate Information: Correctly describe the room condition (area, furniture, amenities).",
+          l4: "FindRoom reserves the right to reject or remove listings that violate rules, lack info, or show signs of fraud without prior notice."
+        },
+        s3: {
+          title: "3. Prohibited Acts",
+          l1: "Fraudulent behavior.",
+          l2: "Using uncultured language, harassing, or threatening other users.",
+          l3: "Posting pornographic, political content, or content violating Vietnamese law.",
+          l4: "Spamming listings or creating multiple fake accounts to manipulate ratings."
+        },
+        s4: {
+          title: "4. Disclaimer",
+          intro: "FindRoom is an intermediary technology platform connecting landlords and tenants. We strive to verify identities (via blue checks) and moderate listings, however:",
+          l1: "FindRoom is not legally responsible for monetary transactions or rental contracts between Landlords and Tenants.",
+          l2: "Tenants need to equip themselves with knowledge, view rooms in person, and sign clear contracts before transacting money.",
+          l3: "We do not guarantee 100% accuracy of all user-generated listings."
+        },
+        s5: {
+          title: "5. Additional Terms",
+          content: "We reserve the right to change or modify these terms at any time to suit actual situations. Changes will take effect immediately upon posting on the website."
+        }
+      },
+      privacy: {
+        title: "Privacy Policy",
+        subtitle: "Committed to protecting your personal information",
+        intro: "At FindRoom, we understand that privacy is extremely important. This policy describes in detail how we collect, use, and protect your personal information.",
+        s1: {
+          title: "1. Data Collection",
+          intro: "We only collect information necessary to operate the service:",
+          l1: "Identity Information: Name, email address, phone number, and avatar.",
+          l2: "Activity Data: Viewing history, saved rooms, and review history."
+        },
+        s2: {
+          title: "2. Scope of Information Use",
+          l1: "Account Verification: Ensuring a safe environment, eliminating fake or fraudulent accounts."
+        },
+        s3: {
+          title: "3. Information Sharing",
+          subtitle: "The 3 NOs Commitment:",
+          l1: "NO selling personal data to third parties.",
+          l2: "NO sharing information with advertising/marketing companies.",
+          l3: "NO publishing sensitive information on the website."
+        },
+        s4: {
+          title: "4. Data Security",
+          content: "All personal information is stored on secure servers. User passwords are one-way encrypted (Hashing) before being saved to the database, ensuring even FindRoom employees cannot know your password."
+        },
+        s5: {
+          title: "5. User Rights",
+          intro: "You have full control over your data:",
+          l1: "Edit: You can update personal information at any time in the \"Profile\" page.",
+          l2: "Delete Account: You have the right to request permanent deletion of your account and all related data from our system by contacting the support team."
         }
       }
     }

@@ -5,6 +5,22 @@ import { useTranslation } from 'react-i18next';
 
 const About = () => {
   const { t } = useTranslation();
+
+  const coreValues = [
+    {
+      title: t('about.values.v1_title'),
+      desc: t('about.values.v1_desc'),
+    },
+    {
+      title: t('about.values.v2_title'),
+      desc: t('about.values.v2_desc'),
+    },
+    {
+      title: t('about.values.v3_title'),
+      desc: t('about.values.v3_desc'),
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12">
       {/* Hero Section */}
@@ -24,16 +40,14 @@ const About = () => {
           <section className="mb-12">
             <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white flex items-center">
               <FiHeart className="mr-2 text-red-500" />
-              Câu chuyện của chúng tôi
+              {t('about.story.title')}
             </h2>
             <div className="prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-300">
               <p className="mb-4">
-                Là những người từng trải qua quãng đời sinh viên, chúng tôi thấu hiểu sâu sắc nỗi vất vả khi đi tìm phòng trọ: 
-                thông tin thiếu minh bạch, hình ảnh "treo đầu dê bán thịt chó", và đau đớn nhất là vấn nạn lừa đảo tiền cọc.
+                {t('about.story.p1')}
               </p>
               <p>
-                FindRoom được thành lập với một mục tiêu duy nhất: <strong>Giải quyết triệt để những khó khăn đó.</strong> 
-                Chúng tôi không chỉ xây dựng một trang web đăng tin, mà đang xây dựng một cộng đồng nơi niềm tin được đặt lên hàng đầu.
+                {t('about.story.p2_prefix')} <strong>{t('about.story.p2_strong')}</strong> {t('about.story.p2_suffix')}
               </p>
             </div>
           </section>
@@ -42,18 +56,16 @@ const About = () => {
           <section className="grid md:grid-cols-2 gap-8 mb-12">
             <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg">
               <FiTarget className="text-4xl text-blue-600 mb-4" />
-              <h3 className="text-xl font-bold mb-2 text-gray-800 dark:text-white">Sứ mệnh</h3>
+              <h3 className="text-xl font-bold mb-2 text-gray-800 dark:text-white">{t('about.mission.title')}</h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Kết nối sinh viên với những chủ trọ uy tín thông qua công nghệ, tạo ra môi trường thuê phòng an toàn, 
-                minh bạch và nhanh chóng nhất.
+                {t('about.mission.content')}
               </p>
             </div>
             <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg">
               <FiUsers className="text-4xl text-green-600 mb-4" />
-              <h3 className="text-xl font-bold mb-2 text-gray-800 dark:text-white">Tầm nhìn</h3>
+              <h3 className="text-xl font-bold mb-2 text-gray-800 dark:text-white">{t('about.vision.title')}</h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Trở thành nền tảng tìm kiếm nhà trọ số 1 dành cho sinh viên, nơi mà việc tìm chỗ ở dễ dàng như việc 
-                lướt mạng xã hội.
+                {t('about.vision.content')}
               </p>
             </div>
           </section>
@@ -62,23 +74,10 @@ const About = () => {
           <section className="mb-12">
             <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white flex items-center">
               <FiShield className="mr-2 text-primary-600" />
-              Cam kết của FindRoom
+              {t('about.values.title')}
             </h2>
             <div className="grid md:grid-cols-3 gap-6">
-              {[
-                {
-                  title: 'Thông tin xác thực',
-                  desc: 'Chúng tôi nỗ lực xác minh danh tính chủ trọ và kiểm duyệt tin đăng để loại bỏ tin rác.',
-                },
-                {
-                  title: 'Hoàn toàn miễn phí',
-                  desc: 'Miễn phí 100% trọn đời cho sinh viên tìm phòng. Không phí môi giới, không phí ẩn.',
-                },
-                {
-                  title: 'Hỗ trợ tận tâm',
-                  desc: 'Đội ngũ hỗ trợ luôn sẵn sàng lắng nghe và giải quyết các khiếu nại của người dùng.',
-                }
-              ].map((item, index) => (
+              {coreValues.map((item, index) => (
                 <div key={index} className="border border-gray-200 dark:border-gray-700 p-4 rounded-lg hover:shadow-md transition-shadow">
                   <FiCheckCircle className="text-green-500 mb-2 text-xl" />
                   <h4 className="font-bold text-gray-800 dark:text-white mb-2">{item.title}</h4>
@@ -91,14 +90,14 @@ const About = () => {
           {/* Call to Action */}
           <div className="text-center border-t border-gray-200 dark:border-gray-700 pt-8">
             <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
-              Bạn đã sẵn sàng tìm nơi ở mới?
+              {t('about.cta.title')}
             </h3>
             <div className="flex justify-center gap-4">
-              <Link to="/" className="btn-primary py-2 px-6 rounded-lg font-semibold">
-                Xem danh sách phòng
+              <Link to="/" className="btn-primary py-2 px-6 rounded-lg font-semibold bg-primary-600 text-white hover:bg-primary-700">
+                {t('about.cta.btn_view')}
               </Link>
-              <Link to="/register" className="btn-secondary py-2 px-6 rounded-lg font-semibold">
-                Đăng ký tài khoản
+              <Link to="/register" className="btn-secondary py-2 px-6 rounded-lg font-semibold bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-white">
+                {t('about.cta.btn_register')}
               </Link>
             </div>
           </div>
