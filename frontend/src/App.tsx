@@ -58,31 +58,15 @@ function App() {
                 <Route path="/roommate-finder" element={<RoommateFinder />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:id" element={<BlogPost />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/faq" element={<FAQ />} />
                 
                 {/* Protected Routes */}
                 <Route path="/dashboard" element={
                   <ProtectedRoute>
                     <Dashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/about" element={
-                  <ProtectedRoute>
-                    <About />
-                  </ProtectedRoute>
-                } />
-                <Route path="/terms" element={
-                  <ProtectedRoute>
-                    <Terms />
-                  </ProtectedRoute>
-                } />
-                <Route path="/privacy" element={
-                  <ProtectedRoute>
-                    <Privacy />
-                  </ProtectedRoute>
-                } />
-                <Route path="/faq" element={
-                  <ProtectedRoute>
-                    <FAQ />
                   </ProtectedRoute>
                 } />
                 <Route path="/create-listing" element={
