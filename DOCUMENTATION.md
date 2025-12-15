@@ -1,57 +1,92 @@
-PROJECT UPDATE LOG: Fixed Image Upload, Storage, and Display System
+📝 Project Release Notes
+[v1.1.0] - 2025-12-15
+Focus: Localization, Messaging System, and User Experience Polish.
 
-1. Root Cause Analysis
+🚀 New Features
 
-Upload Logic: The app was using upload.js (Memory Storage) but the controller listings.js was written as if it were using upload-cloudinary.js (Cloudinary Storage middleware). This caused req.files to contain buffers instead of file paths, resulting in empty data in the database.
+🌐 Internationalization (i18n):
 
-Module Exports: upload.js had a logic error where module.exports = upload overwrote the helper function uploadToCloudinary, causing TypeError: is not a function.
+Implemented full English (en) and Vietnamese (vi) support.
 
-Frontend Display: imageHelper.ts was not correctly normalizing local file paths (missing /uploads/ prefix), leading to 404 errors for local images.
+Launched fully localized support pages: About Us, FAQ, Privacy Policy, and Terms of Service.
 
-Deployment: Render failed to detect the open port because the server was listening on localhost instead of 0.0.0.0.
+Refactored core page components to utilize the useTranslation hook for dynamic text rendering.
 
-2. Backend Changes
+💬 Messaging System:
 
-backend/middleware/upload.js (Major Refactor)
+UI Restoration: Re-integrated the "Message Landlord" button on ListingDetail pages (visible only to tenants).
 
-Changed storage engine to multer.memoryStorage() when using Cloudinary to allow manual parallel uploading in the controller.
+Smart Navigation: Enabled deep-linking from a listing directly to a specific conversation context.
 
-Fixed export structure: Attached uploadToCloudinary directly to the upload object (upload.uploadToCloudinary = ...) to prevent overwriting.
+Self-Healing Architecture: Implemented automated backend logic to detect and prune "ghost conversations" (corrupt data referencing deleted users), preventing 403 Access Denied loops.
 
-Added fallback to Local Disk Storage if Cloudinary credentials are missing.
+👤 User Experience:
+
+Instant Profile Updates: Refactored AuthContext and Profile to support optimistic UI updates, reflecting changes immediately without page reloads.
+
+Visual Cues: Added a FiClock icon to the "Stayed History" link in the navigation menu.
+
+🐛 Bug Fixes
+
+Blog & Community:
+
+Crash Prevention: Implemented safe navigation (?.) for blog posts with deleted authors to prevent runtime errors.
+
+Sorting Logic: Moved "Sort by Likes" logic to an in-memory operation to bypass MongoDB Aggregation limitations on the current environment.
+
+Pagination: Fixed data discrepancies where filtering null authors caused pagination under-fetching.
+
+Security & Navigation:
+
+ID Comparison: Refactored backend routes to safely compare MongoDB ObjectId vs String IDs.
+
+Broken Links: Fixed the "Saved Roommates" link in Navbar.tsx which previously pointed to "Saved Listings".
+
+[v1.0.5] - 2025-12-14
+Focus: Critical Infrastructure, Image Pipeline, and Deployment Stability.
+
+🛠 Critical System Repairs
+
+🖼️ Image Upload Pipeline:
+
+Middleware Refactor: Overhauled upload.js to correctly export the uploadToCloudinary helper function without overwriting the multer instance.
+
+Storage Logic: Switched to multer.memoryStorage() for Cloudinary uploads to ensure file buffers are available for processing.
+
+Path Normalization: Updated imageHelper.ts to correctly distinguish and format local file paths (prepending /uploads/ and API URL) vs. remote Cloudinary URLs.
+
+Fallback Handling: Implemented onError handlers for images to swap broken sources with a placeholder.
+
+☁️ Infrastructure & Deployment:
+
+Render Binding: Updated server.js to bind to 0.0.0.0 instead of localhost, resolving "No open ports detected" deployment timeouts.
+
+Database Safety: Added process.exit(1) on MongoDB connection failures to ensure the app fails fast rather than hanging.
+
+Static Serving: Configured Express to serve files from the local /uploads directory.
+
+📂 Files Modified (Cumulative)
+
+Frontend:
+
+src/i18n/config.ts
+
+src/components/Navbar.tsx
+
+src/contexts/AuthContext.tsx
+
+src/utils/imageHelper.ts
+
+src/pages/* (About, Blog, FAQ, ListingDetail, Messages, Privacy, Profile, Terms)
+
+Backend:
+
+backend/middleware/upload.js
+
+backend/routes/blogs.js
 
 backend/routes/listings.js
 
-Updated POST and PUT routes to manually call uploadMiddleware.uploadToCloudinary(req.files).
-
-Added a helper getMediaFromProcessedFiles to robustly extract URLs (file.path or file.url) from the upload result.
+backend/routes/messages.js
 
 backend/server.js
-
-Added app.use('/uploads', express.static('uploads')) to serve local files.
-
-Updated app.listen to bind to 0.0.0.0 to resolve Render "No open ports" timeout.
-
-Added process.exit(1) on MongoDB connection failure to fail fast instead of hanging.
-
-3. Frontend Changes
-
-frontend/src/utils/imageHelper.ts
-
-Updated logic to detect if a path is a full URL (Cloudinary) or a relative path (Local).
-
-If local, it now automatically prepends /uploads/ and the VITE_API_URL to ensure valid links.
-
-Added handling for Windows-style backslashes (\).
-
-frontend/src/pages/ListingDetail.tsx
-
-Added onError event handler to <img> tags.
-
-If an image fails to load (404), it automatically swaps the source to a placeholder image (https://placehold.co...), preventing broken UI elements.
-
-4. Added support pages including:
-    - FAQ
-    - Privacy Policy
-    - Terms of use
-    - About us
