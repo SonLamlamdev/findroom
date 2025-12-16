@@ -5,6 +5,7 @@ const resources = {
   vi: {
     translation: {
       // ... keep your existing nav, footer, common ...
+      // Only updated relevant sections below
       nav: {
         home: 'Trang chủ',
         listings: 'Danh sách phòng',
@@ -71,7 +72,6 @@ const resources = {
           community: 'Cộng đồng',
           communityDesc: 'Chia sẻ kinh nghiệm và mẹo sống trọ'
         },
-        // --- NEW KEYS FOR HOME STATS & CTA ---
         stats: {
           rooms: "Phòng trọ",
           landlords: "Chủ trọ",
@@ -85,7 +85,6 @@ const resources = {
           viewMap: "Khám phá bản đồ"
         }
       },
-      // ... keep auth, listings, map, flood, create, listingDetail ...
       auth: {
         login: 'Đăng nhập',
         register: 'Đăng ký',
@@ -139,9 +138,9 @@ const resources = {
         },
         legend: {
           title: "Chú thích",
-          lowPrice: "Giá thấp (< 2tr)",
-          medPrice: "Giá trung bình (2-4tr)",
-          highPrice: "Giá cao (> 4tr)",
+          lowPrice: "Giá rẻ (< 2.5tr)", // UPDATED
+          medPrice: "Phổ thông (2.5-5tr)", // UPDATED
+          highPrice: "Cao cấp (> 5tr)", // UPDATED
           floodLow: "Ngập nhẹ (Mắt cá)",
           floodMed: "Ngập vừa (Đầu gối)",
           floodHigh: "Ngập nặng (Yên xe)"
@@ -457,7 +456,6 @@ const resources = {
         sendError: "Không thể gửi tin nhắn",
         deleteError: "Không thể xóa tin nhắn"
       },
-      // --- NEW: ADMIN PANEL ---
       admin: {
         noAccess: "Bạn không có quyền truy cập",
         accessDeniedTitle: "Không có quyền truy cập",
@@ -541,112 +539,13 @@ const resources = {
           btn_view: "Xem danh sách phòng",
           btn_register: "Đăng ký tài khoản"
         }
-      },
-      faq: {
-        title: "Câu hỏi thường gặp",
-        subtitle: "Chúng tôi ở đây để giải đáp mọi thắc mắc của bạn về quá trình tìm phòng và cho thuê.",
-        tabs: {
-          tenant: "Cho Người Thuê",
-          landlord: "Cho Chủ Trọ"
-        },
-        footer: {
-          text: "Vẫn chưa tìm thấy câu trả lời?",
-          link: "Liên hệ bộ phận hỗ trợ"
-        },
-        tenant: {
-          q1: "Tìm phòng trên FindRoom có mất phí không?",
-          a1: "Hoàn toàn miễn phí! FindRoom cam kết không thu bất kỳ khoản phí môi giới nào từ sinh viên/người đi thuê phòng.",
-          q2: "Làm sao để tránh bị lừa đảo khi thuê phòng?",
-          a2: "Tuyệt đối KHÔNG chuyển tiền cọc khi chưa đến xem phòng trực tiếp và gặp chủ trọ. Hãy ưu tiên các tin đăng từ chủ trọ có tích xanh (Đã xác thực) và luôn ký hợp đồng thuê rõ ràng.",
-          q3: "Tôi có thể hủy lịch hẹn xem phòng không?",
-          a3: "Có. Nếu bạn bận, vui lòng vào phần 'Quản lý lịch hẹn' để hủy hoặc nhắn tin báo cho chủ trọ biết. Điều này giúp giữ uy tín cho tài khoản của bạn.",
-          q4: "Chức năng 'Lưu tin' dùng để làm gì?",
-          a4: "Giúp bạn lưu lại những căn phòng ưng ý để dễ dàng so sánh giá cả và vị trí trước khi đưa ra quyết định cuối cùng."
-        },
-        landlord: {
-          q1: "Đăng tin cho thuê có mất phí không?",
-          a1: "Hiện tại FindRoom đang hỗ trợ miễn phí đăng tin cho tất cả chủ trọ để xây dựng cộng đồng. Trong tương lai có thể sẽ có các gói dịch vụ cao cấp (đẩy tin, tin nổi bật) có phí.",
-          q2: "Làm sao để tin đăng của tôi được nhiều người xem?",
-          a2: "Hình ảnh đẹp, sáng sủa và thông tin chi tiết là chìa khóa. Hãy điền đầy đủ giá điện, nước, tiện nghi và mô tả kỹ về an ninh khu vực.",
-          q3: "Làm thế nào để được cấp tích xanh 'Chủ trọ xác thực'?",
-          a3: "Bạn cần cập nhật hồ sơ cá nhân và tải lên ảnh CCCD/CMND để hệ thống xác minh. Chủ trọ có tích xanh thường được người thuê tin tưởng hơn gấp 3 lần.",
-          q4: "Tôi có thể ẩn tin khi phòng đã cho thuê không?",
-          a4: "Được. Bạn vào phần 'Quản lý tin đăng' và chuyển trạng thái tin sang 'Đã ẩn' hoặc 'Đã cho thuê' để không bị làm phiền."
-        }
-      },
-      terms: {
-        title: "Điều khoản sử dụng",
-        lastUpdated: "Cập nhật lần cuối: 14/12/2025",
-        intro: "Chào mừng bạn đến với FindRoom. Khi truy cập và sử dụng nền tảng này, bạn đồng ý tuân thủ các điều khoản dưới đây. Vui lòng đọc kỹ để bảo vệ quyền lợi của chính mình.",
-        s1: {
-          title: "1. Tài khoản người dùng",
-          l1: "Người dùng chịu trách nhiệm bảo mật thông tin đăng nhập (email, mật khẩu).",
-          l2: "Bạn phải cung cấp thông tin chính xác khi đăng ký (tên thật, số điện thoại liên lạc).",
-          l3: "Không được sử dụng tài khoản của người khác hoặc mạo danh bất kỳ cá nhân/tổ chức nào."
-        },
-        s2: {
-          title: "2. Quy định đăng tin (Dành cho Chủ trọ)",
-          l1: "Hình ảnh thực tế: Hình ảnh phòng trọ phải là ảnh thật, không sử dụng ảnh minh họa lấy từ internet gây hiểu lầm.",
-          l2: "Giá cả minh bạch: Phải niêm yết giá thuê chính xác, bao gồm cả giá điện, nước và các phí dịch vụ khác (nếu có).",
-          l3: "Thông tin chính xác: Mô tả đúng hiện trạng phòng (diện tích, nội thất, tiện nghi).",
-          l4: "FindRoom có quyền từ chối hoặc xóa các tin đăng vi phạm, thiếu thông tin hoặc có dấu hiệu lừa đảo mà không cần báo trước."
-        },
-        s3: {
-          title: "3. Các hành vi bị nghiêm cấm",
-          l1: "Những hành vi lừa đảo.",
-          l2: "Sử dụng ngôn từ thiếu văn hóa, quấy rối hoặc đe dọa người dùng khác.",
-          l3: "Đăng tải nội dung đồi trụy, chính trị hoặc vi phạm pháp luật Việt Nam.",
-          l4: "Spam tin đăng hoặc tạo nhiều tài khoản ảo để thao túng đánh giá."
-        },
-        s4: {
-          title: "4. Miễn trừ trách nhiệm",
-          intro: "FindRoom là nền tảng công nghệ trung gian kết nối người cho thuê và người cần thuê. Chúng tôi nỗ lực tối đa để xác thực danh tính (thông qua dấu tích xanh) và kiểm duyệt tin đăng, tuy nhiên:",
-          l1: "FindRoom không chịu trách nhiệm pháp lý đối với các giao dịch tiền bạc, hợp đồng thuê nhà diễn ra giữa Chủ trọ và Người thuê.",
-          l2: "Người thuê cần tự trang bị kiến thức, đến xem phòng trực tiếp và ký hợp đồng rõ ràng trước khi giao dịch tiền bạc.",
-          l3: "Chúng tôi không đảm bảo 100% tính chính xác của mọi tin đăng do người dùng tạo ra."
-        },
-        s5: {
-          title: "5. Điều khoản bổ sung",
-          content: "Chúng tôi có quyền thay đổi, chỉnh sửa các điều khoản này bất cứ lúc nào để phù hợp với tình hình thực tế. Các thay đổi sẽ có hiệu lực ngay khi được đăng tải trên website."
-        }
-      },
-      privacy: {
-        title: "Chính sách bảo mật",
-        subtitle: "Cam kết bảo vệ thông tin cá nhân của bạn",
-        intro: "Tại FindRoom, chúng tôi hiểu rằng quyền riêng tư là vô cùng quan trọng. Chính sách này mô tả chi tiết cách chúng tôi thu thập, sử dụng và bảo vệ thông tin cá nhân của bạn khi sử dụng nền tảng.",
-        s1: {
-          title: "1. Dữ liệu chúng tôi thu thập",
-          intro: "Chúng tôi chỉ thu thập những thông tin cần thiết để vận hành dịch vụ:",
-          l1: "Thông tin định danh: Họ tên, địa chỉ email, số điện thoại, và ảnh đại diện (avatar).",
-          l2: "Dữ liệu hoạt động: Lịch sử xem phòng, các phòng đã lưu, và lịch sử đánh giá."
-        },
-        s2: {
-          title: "2. Phạm vi sử dụng thông tin",
-          l1: "Xác thực tài khoản: Đảm bảo môi trường an toàn, loại bỏ các tài khoản ảo hoặc lừa đảo."
-        },
-        s3: {
-          title: "3. Chia sẻ thông tin",
-          subtitle: "Cam kết 3 KHÔNG:",
-          l1: "KHÔNG bán dữ liệu cá nhân cho bên thứ ba.",
-          l2: "KHÔNG chia sẻ thông tin cho các công ty quảng cáo/tiếp thị.",
-          l3: "KHÔNG công khai thông tin nhạy cảm lên website."
-        },
-        s4: {
-          title: "4. Bảo mật dữ liệu",
-          content: "Mọi thông tin cá nhân được lưu trữ trên máy chủ bảo mật. Mật khẩu của người dùng được mã hóa một chiều (Hashing) trước khi lưu vào cơ sở dữ liệu, đảm bảo ngay cả nhân viên của FindRoom cũng không thể biết mật khẩu của bạn."
-        },
-        s5: {
-          title: "5. Quyền của người dùng",
-          intro: "Bạn có toàn quyền kiểm soát dữ liệu của mình:",
-          l1: "Chỉnh sửa: Bạn có thể cập nhật thông tin cá nhân bất cứ lúc nào trong trang \"Hồ sơ\".",
-          l2: "Xóa tài khoản: Bạn có quyền yêu cầu xóa vĩnh viễn tài khoản và toàn bộ dữ liệu liên quan khỏi hệ thống của chúng tôi bằng cách liên hệ với đội ngũ hỗ trợ."
-        }
       }
     }
   },
   en: {
     translation: {
       // ... keep your existing nav, footer, common ...
+      // Only updated relevant sections below
       nav: {
         home: 'Home',
         listings: 'Listings',
@@ -658,7 +557,7 @@ const resources = {
         post: 'Post Listing',
         profile: 'Profile',
         saved: 'Saved Listings',
-        savedRoommates: 'Saved Roommate',
+        savedRoommates: 'Saved Roommates',
         messages: 'Messages',
         stayed: 'Stayed History',
         admin: 'Admin Panel',
@@ -713,7 +612,6 @@ const resources = {
           community: 'Community',
           communityDesc: 'Share experiences and living tips'
         },
-        // --- NEW KEYS FOR HOME STATS & CTA ---
         stats: {
           rooms: "Rooms",
           landlords: "Landlords",
@@ -727,7 +625,6 @@ const resources = {
           viewMap: "Explore Map"
         }
       },
-      // ... keep auth, listings, map, flood, create, listingDetail ...
       auth: {
         login: 'Login',
         register: 'Register',
@@ -781,9 +678,9 @@ const resources = {
         },
         legend: {
           title: "Legend",
-          lowPrice: "Low Price (< 2M)",
-          medPrice: "Medium Price (2-4M)",
-          highPrice: "High Price (> 4M)",
+          lowPrice: "Budget (< 2.5M)", // UPDATED
+          medPrice: "Standard (2.5-5M)", // UPDATED
+          highPrice: "Premium (> 5M)", // UPDATED
           floodLow: "Low Flood (Ankle)",
           floodMed: "Med Flood (Knee)",
           floodHigh: "High Flood (Bike Seat)"
@@ -1099,7 +996,6 @@ const resources = {
         sendError: "Failed to send message",
         deleteError: "Failed to delete message"
       },
-      // --- NEW: ADMIN PANEL ---
       admin: {
         noAccess: "Access Denied",
         accessDeniedTitle: "Access Denied",
@@ -1182,106 +1078,6 @@ const resources = {
           title: "Ready to find your new place?",
           btn_view: "Browse Listings",
           btn_register: "Register Account"
-        }
-      },
-      faq: {
-        title: "Frequently Asked Questions",
-        subtitle: "We are here to answer all your questions about the rental process.",
-        tabs: {
-          tenant: "For Tenants",
-          landlord: "For Landlords"
-        },
-        footer: {
-          text: "Still haven't found an answer?",
-          link: "Contact Support"
-        },
-        tenant: {
-          q1: "Is finding a room on FindRoom free?",
-          a1: "Completely free! FindRoom commits to zero brokerage fees for students/tenants.",
-          q2: "How to avoid rental scams?",
-          a2: "Absolutely DO NOT transfer deposit money without seeing the room in person and meeting the landlord. Prioritize listings from landlords with a Blue Check (Verified) and always sign a clear contract.",
-          q3: "Can I cancel a viewing appointment?",
-          a3: "Yes. If you are busy, please go to 'Appointment Management' to cancel or message the landlord. This helps maintain your account credibility.",
-          q4: "What is the 'Save Listing' feature for?",
-          a4: "It helps you save rooms you like to easily compare prices and locations before making a final decision."
-        },
-        landlord: {
-          q1: "Is posting a listing free?",
-          a1: "Currently, FindRoom supports free posting for all landlords to build the community. In the future, there may be premium paid services (pushing listings, featured listings).",
-          q2: "How do I get more views on my listing?",
-          a2: "Beautiful, bright photos and detailed information are key. Fill in full details about electricity, water prices, amenities, and security descriptions.",
-          q3: "How do I get the 'Verified Landlord' blue check?",
-          a3: "You need to update your profile and upload your ID card for system verification. Verified landlords are trusted 3x more by tenants.",
-          q4: "Can I hide a listing when rented?",
-          a4: "Yes. Go to 'Listing Management' and change the status to 'Hidden' or 'Rented' to stop receiving inquiries."
-        }
-      },
-      terms: {
-        title: "Terms of Use",
-        lastUpdated: "Last Updated: 14/12/2025",
-        intro: "Welcome to FindRoom. By accessing and using this platform, you agree to comply with the following terms. Please read carefully to protect your rights.",
-        s1: {
-          title: "1. User Account",
-          l1: "Users are responsible for the security of their login information (email, password).",
-          l2: "You must provide accurate information when registering (real name, contact phone number).",
-          l3: "Do not use another person's account or impersonate any individual/organization."
-        },
-        s2: {
-          title: "2. Posting Rules (For Landlords)",
-          l1: "Real Images: Room photos must be real, do not use misleading illustrations from the internet.",
-          l2: "Transparent Pricing: Exact rental prices must be listed, including electricity, water, and other service fees (if any).",
-          l3: "Accurate Information: Correctly describe the room condition (area, furniture, amenities).",
-          l4: "FindRoom reserves the right to reject or remove listings that violate rules, lack info, or show signs of fraud without prior notice."
-        },
-        s3: {
-          title: "3. Prohibited Acts",
-          l1: "Fraudulent behavior.",
-          l2: "Using uncultured language, harassing, or threatening other users.",
-          l3: "Posting pornographic, political content, or content violating Vietnamese law.",
-          l4: "Spamming listings or creating multiple fake accounts to manipulate ratings."
-        },
-        s4: {
-          title: "4. Disclaimer",
-          intro: "FindRoom is an intermediary technology platform connecting landlords and tenants. We strive to verify identities (via blue checks) and moderate listings, however:",
-          l1: "FindRoom is not legally responsible for monetary transactions or rental contracts between Landlords and Tenants.",
-          l2: "Tenants need to equip themselves with knowledge, view rooms in person, and sign clear contracts before transacting money.",
-          l3: "We do not guarantee 100% accuracy of all user-generated listings."
-        },
-        s5: {
-          title: "5. Additional Terms",
-          content: "We reserve the right to change or modify these terms at any time to suit actual situations. Changes will take effect immediately upon posting on the website."
-        }
-      },
-      privacy: {
-        title: "Privacy Policy",
-        subtitle: "Committed to protecting your personal information",
-        intro: "At FindRoom, we understand that privacy is extremely important. This policy describes in detail how we collect, use, and protect your personal information.",
-        s1: {
-          title: "1. Data Collection",
-          intro: "We only collect information necessary to operate the service:",
-          l1: "Identity Information: Name, email address, phone number, and avatar.",
-          l2: "Activity Data: Viewing history, saved rooms, and review history."
-        },
-        s2: {
-          title: "2. Scope of Information Use",
-          l1: "Account Verification: Ensuring a safe environment, eliminating fake or fraudulent accounts."
-        },
-        s3: {
-          title: "3. Information Sharing",
-          subtitle: "The 3 NOs Commitment:",
-          l1: "NO selling personal data to third parties.",
-          l2: "NO sharing information with advertising/marketing companies.",
-          l3: "NO publishing sensitive information on the website."
-        },
-        s4: {
-          title: "4. Data Security",
-          content: "All personal information is stored on secure servers. User passwords are one-way encrypted (Hashing) before being saved to the database, ensuring even FindRoom employees cannot know your password."
-        },
-        s5: {
-          title: "5. User Rights",
-          intro: "You have full control over your data:",
-          l1: "Edit: You can update personal information at any time in the \"Profile\" page.",
-          l2: "Delete Account: You have the right to request permanent deletion of your account and all related data from our system by contacting the support team."
         }
       }
     }

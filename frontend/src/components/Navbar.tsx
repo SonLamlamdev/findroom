@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-// Added FiClock to the imports
 import { FiSun, FiMoon, FiMenu, FiX, FiUser, FiHeart, FiGrid, FiMessageCircle, FiShield, FiClock } from 'react-icons/fi';
 import { useState } from 'react';
 import { getAvatarUrl } from '../utils/imageHelper';
@@ -40,12 +39,14 @@ const Navbar = () => {
             <Link to="/map" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
               {t('nav.map')}
             </Link>
-            {/* Only show "Find Roommate" for tenants */}
-            {(!user || user.role === 'tenant') && (
+            
+            {/* UPDATED: Show "Find Roommate" for Tenants AND Admins */}
+            {(!user || user.role === 'tenant' || user.role === 'admin') && (
               <Link to="/roommate-finder" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
                 {t('nav.roommate')}
               </Link>
             )}
+
             {/* Landlord/Admin features */}
             {user && (user.role === 'landlord' || user.role === 'admin') && (
               <>
@@ -117,7 +118,9 @@ const Navbar = () => {
                     >
                       <FiMessageCircle className="inline mr-2" /> {t('nav.messages')}
                     </Link>
-                    {user.role === 'tenant' && (
+                    
+                    {/* UPDATED: Allow Admins to see Tenant menu items too */}
+                    {(user.role === 'tenant' || user.role === 'admin') && (
                       <>
                         <Link
                           to="/saved-roommates"
@@ -126,7 +129,6 @@ const Navbar = () => {
                         >
                           <FiHeart className="inline mr-2" /> {t('nav.savedRoommates')}
                         </Link>
-                        {/* ADDED ICON HERE */}
                         <Link
                           to="/stayed"
                           className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -136,6 +138,7 @@ const Navbar = () => {
                         </Link>
                       </>
                     )}
+
                     {user.role === 'admin' && (
                       <Link
                         to="/admin"
@@ -206,7 +209,9 @@ const Navbar = () => {
             >
               {t('nav.map')}
             </Link>
-            {(!user || user.role === 'tenant') && (
+            
+            {/* UPDATED: Show for Tenants AND Admins in Mobile Menu */}
+            {(!user || user.role === 'tenant' || user.role === 'admin') && (
               <Link
                 to="/roommate-finder"
                 className="block py-2 text-gray-700 dark:text-gray-300"
@@ -215,6 +220,7 @@ const Navbar = () => {
                 {t('nav.roommate')}
               </Link>
             )}
+
             {user && (user.role === 'landlord' || user.role === 'admin') && (
               <>
                 <Link

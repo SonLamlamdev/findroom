@@ -109,7 +109,7 @@ interface FloodReport {
 }
 
 const MapView = () => {
-  const { t } = useTranslation(); // Initialize Hook
+  const { t } = useTranslation();
   const [listings, setListings] = useState<Listing[]>([]);
   const [annotations, setAnnotations] = useState<MapAnnotation[]>([]);
   const [floodZones, setFloodZones] = useState<FloodZone[]>([]);
@@ -176,15 +176,16 @@ const MapView = () => {
     }
   };
 
+  // UPDATED PRICE LOGIC (2.5M & 5M)
   const getPriceColor = (maxPrice: number): string => {
-    if (maxPrice < 2000000) return '#22c55e';
-    if (maxPrice <= 4000000) return '#eab308';
-    return '#ef4444';
+    if (maxPrice < 2500000) return '#22c55e'; // Green (< 2.5M)
+    if (maxPrice <= 5000000) return '#eab308'; // Yellow (2.5M - 5M)
+    return '#ef4444'; // Red (> 5M)
   };
 
   const getPriceLabel = (maxPrice: number): string => {
-    if (maxPrice < 2000000) return t('map.legend.lowPrice');
-    if (maxPrice <= 4000000) return t('map.legend.medPrice');
+    if (maxPrice < 2500000) return t('map.legend.lowPrice');
+    if (maxPrice <= 5000000) return t('map.legend.medPrice');
     return t('map.legend.highPrice');
   };
 
@@ -473,8 +474,8 @@ const MapView = () => {
                     )}
                     <p className="text-xs text-gray-600 mb-1">
                       <span className={`inline-block px-2 py-1 rounded text-xs ${
-                        maxPrice < 2000000 ? 'bg-green-100 text-green-800' :
-                        maxPrice <= 4000000 ? 'bg-yellow-100 text-yellow-800' :
+                        maxPrice < 2500000 ? 'bg-green-100 text-green-800' :
+                        maxPrice <= 5000000 ? 'bg-yellow-100 text-yellow-800' :
                         'bg-red-100 text-red-800'
                       }`}>
                         {label}
@@ -493,6 +494,7 @@ const MapView = () => {
           })}
         
         {dataLayer === 'flood' && floodZones.map((zone) => {
+          // ... Flood logic remains unchanged ...
           const color = getFloodColor(zone.maxLevel, zone.maxFloodDepth);
           const opacity = getFloodOpacity(zone.maxLevel);
           const depthLabels: Record<string, string> = {
@@ -542,6 +544,7 @@ const MapView = () => {
         {dataLayer === 'flood' && floodReports
           .filter(report => report.status !== 'resolved')
           .map((report) => {
+          // ... Flood report logic remains unchanged ...
           if (!report.location?.coordinates) return null;
           const lat = report.location.coordinates.lat;
           const lng = report.location.coordinates.lng;
@@ -634,8 +637,8 @@ const MapView = () => {
                   <p className="text-primary-600 font-bold mb-1">{formatPrice(listing.price)}/tháng</p>
                   <p className="text-xs mb-1">
                     <span className={`inline-block px-2 py-1 rounded text-xs ${
-                      listing.price < 2000000 ? 'bg-green-100 text-green-800' :
-                      listing.price <= 4000000 ? 'bg-yellow-100 text-yellow-800' :
+                      listing.price < 2500000 ? 'bg-green-100 text-green-800' :
+                      listing.price <= 5000000 ? 'bg-yellow-100 text-yellow-800' :
                       'bg-red-100 text-red-800'
                     }`}>
                       {priceLabel}
@@ -682,6 +685,7 @@ interface FloodReportModalProps {
 }
 
 const FloodReportModal = ({ onClose, onSuccess }: FloodReportModalProps) => {
+  // ... FloodReportModal implementation remains identical ...
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
     level: 'medium' as 'low' | 'medium' | 'high',
