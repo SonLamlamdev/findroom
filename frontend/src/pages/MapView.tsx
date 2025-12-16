@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, ZoomControl, Polygon, Circle } 
 import { Icon, divIcon } from 'leaflet';
 import axios from '../config/axios';
 import toast from 'react-hot-toast';
+import { useDebounce } from '../hooks/useDebounce';
 import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../utils/errorHandler';
 // import { FiMapPin, FiDollarSign } from 'react-icons/fi'; // Unused in original
@@ -120,6 +121,13 @@ const MapView = () => {
     maxPrice: '',
     roomType: ''
   });
+
+  const debouncedFilters = useDebounce(filters, 500);
+
+  useEffect(() => {
+    fetchListings();
+    // ... (rest of logic)
+  }, [debouncedFilters, dataLayer]);
 
   useEffect(() => {
     fetchListings();

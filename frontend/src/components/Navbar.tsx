@@ -15,6 +15,8 @@ const Navbar = () => {
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
+    // 3. Save the language to localStorage whenever it changes
+    localStorage.setItem('i18nextLng', lng);
   };
 
   return (
@@ -40,7 +42,7 @@ const Navbar = () => {
               {t('nav.map')}
             </Link>
             
-            {/* UPDATED: Show "Find Roommate" for Tenants AND Admins */}
+            {/* Show "Find Roommate" for Tenants AND Admins */}
             {(!user || user.role === 'tenant' || user.role === 'admin') && (
               <Link to="/roommate-finder" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
                 {t('nav.roommate')}
@@ -119,7 +121,7 @@ const Navbar = () => {
                       <FiMessageCircle className="inline mr-2" /> {t('nav.messages')}
                     </Link>
                     
-                    {/* UPDATED: Allow Admins to see Tenant menu items too */}
+                    {/* Allow Admins to see Tenant menu items too */}
                     {(user.role === 'tenant' || user.role === 'admin') && (
                       <>
                         <Link
@@ -210,7 +212,7 @@ const Navbar = () => {
               {t('nav.map')}
             </Link>
             
-            {/* UPDATED: Show for Tenants AND Admins in Mobile Menu */}
+            {/* Show for Tenants AND Admins in Mobile Menu */}
             {(!user || user.role === 'tenant' || user.role === 'admin') && (
               <Link
                 to="/roommate-finder"

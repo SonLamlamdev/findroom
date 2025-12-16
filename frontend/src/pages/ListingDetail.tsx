@@ -217,12 +217,26 @@ const ListingDetail = () => {
   const isOwner = user && listing && user._id === listing.landlord._id;
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+  return (
+    <div className="container mx-auto px-4 py-8 animate-pulse">
+      {/* Image Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+        <div className="grid grid-cols-3 gap-2">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+          ))}
+        </div>
       </div>
-    );
-  }
+      {/* Text Skeleton */}
+      <div className="space-y-4 max-w-2xl">
+        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+        <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+      </div>
+    </div>
+  );
+}
 
   if (!listing) {
     return (

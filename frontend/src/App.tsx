@@ -6,6 +6,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import ScrollToTop from './components/ScrollToTop';
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import('./pages/Home'));
@@ -42,6 +43,7 @@ const LoadingSpinner = () => (
 function App() {
   return (
     <ThemeProvider>
+      <ScrollToTop />
       <AuthProvider>
         <Router>
           <div className="min-h-screen flex flex-col">

@@ -1,11 +1,13 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
+// 1. Check if user has a saved preference, default to 'vi'
+const savedLanguage = localStorage.getItem('i18nextLng') || 'vi';
+
 const resources = {
   vi: {
+    // ... (Your existing Vietnamese translations) ...
     translation: {
-      // ... keep your existing nav, footer, common ...
-      // Only updated relevant sections below
       nav: {
         home: 'Trang chủ',
         listings: 'Danh sách phòng',
@@ -138,9 +140,9 @@ const resources = {
         },
         legend: {
           title: "Chú thích",
-          lowPrice: "Giá rẻ (< 2.5tr)", // UPDATED
-          medPrice: "Phổ thông (2.5-5tr)", // UPDATED
-          highPrice: "Cao cấp (> 5tr)", // UPDATED
+          lowPrice: "Giá rẻ (< 2.5tr)",
+          medPrice: "Phổ thông (2.5-5tr)",
+          highPrice: "Cao cấp (> 5tr)",
           floodLow: "Ngập nhẹ (Mắt cá)",
           floodMed: "Ngập vừa (Đầu gối)",
           floodHigh: "Ngập nặng (Yên xe)"
@@ -543,9 +545,8 @@ const resources = {
     }
   },
   en: {
+    // ... (Your existing English translations) ...
     translation: {
-      // ... keep your existing nav, footer, common ...
-      // Only updated relevant sections below
       nav: {
         home: 'Home',
         listings: 'Listings',
@@ -557,7 +558,7 @@ const resources = {
         post: 'Post Listing',
         profile: 'Profile',
         saved: 'Saved Listings',
-        savedRoommates: 'Saved Roommates',
+        savedRoommates: 'Saved Roommate',
         messages: 'Messages',
         stayed: 'Stayed History',
         admin: 'Admin Panel',
@@ -678,9 +679,9 @@ const resources = {
         },
         legend: {
           title: "Legend",
-          lowPrice: "Budget (< 2.5M)", // UPDATED
-          medPrice: "Standard (2.5-5M)", // UPDATED
-          highPrice: "Premium (> 5M)", // UPDATED
+          lowPrice: "Budget (< 2.5M)",
+          medPrice: "Standard (2.5-5M)",
+          highPrice: "Premium (> 5M)",
           floodLow: "Low Flood (Ankle)",
           floodMed: "Med Flood (Knee)",
           floodHigh: "High Flood (Bike Seat)"
@@ -1079,6 +1080,106 @@ const resources = {
           btn_view: "Browse Listings",
           btn_register: "Register Account"
         }
+      },
+      faq: {
+        title: "Frequently Asked Questions",
+        subtitle: "We are here to answer all your questions about the rental process.",
+        tabs: {
+          tenant: "For Tenants",
+          landlord: "For Landlords"
+        },
+        footer: {
+          text: "Still haven't found an answer?",
+          link: "Contact Support"
+        },
+        tenant: {
+          q1: "Is finding a room on FindRoom free?",
+          a1: "Completely free! FindRoom commits to zero brokerage fees for students/tenants.",
+          q2: "How to avoid rental scams?",
+          a2: "Absolutely DO NOT transfer deposit money without seeing the room in person and meeting the landlord. Prioritize listings from landlords with a Blue Check (Verified) and always sign a clear contract.",
+          q3: "Can I cancel a viewing appointment?",
+          a3: "Yes. If you are busy, please go to 'Appointment Management' to cancel or message the landlord. This helps maintain your account credibility.",
+          q4: "What is the 'Save Listing' feature for?",
+          a4: "It helps you save rooms you like to easily compare prices and locations before making a final decision."
+        },
+        landlord: {
+          q1: "Is posting a listing free?",
+          a1: "Currently, FindRoom supports free posting for all landlords to build the community. In the future, there may be premium paid services (pushing listings, featured listings).",
+          q2: "How do I get more views on my listing?",
+          a2: "Beautiful, bright photos and detailed information are key. Fill in full details about electricity, water prices, amenities, and security descriptions.",
+          q3: "How do I get the 'Verified Landlord' blue check?",
+          a3: "You need to update your profile and upload your ID card for system verification. Verified landlords are trusted 3x more by tenants.",
+          q4: "Can I hide a listing when rented?",
+          a4: "Yes. Go to 'Listing Management' and change the status to 'Hidden' or 'Rented' to stop receiving inquiries."
+        }
+      },
+      terms: {
+        title: "Terms of Use",
+        lastUpdated: "Last Updated: 14/12/2025",
+        intro: "Welcome to FindRoom. By accessing and using this platform, you agree to comply with the following terms. Please read carefully to protect your rights.",
+        s1: {
+          title: "1. User Account",
+          l1: "Users are responsible for the security of their login information (email, password).",
+          l2: "You must provide accurate information when registering (real name, contact phone number).",
+          l3: "Do not use another person's account or impersonate any individual/organization."
+        },
+        s2: {
+          title: "2. Posting Rules (For Landlords)",
+          l1: "Real Images: Room photos must be real, do not use misleading illustrations from the internet.",
+          l2: "Transparent Pricing: Exact rental prices must be listed, including electricity, water, and other service fees (if any).",
+          l3: "Accurate Information: Correctly describe the room condition (area, furniture, amenities).",
+          l4: "FindRoom reserves the right to reject or remove listings that violate rules, lack info, or show signs of fraud without prior notice."
+        },
+        s3: {
+          title: "3. Prohibited Acts",
+          l1: "Fraudulent behavior.",
+          l2: "Using uncultured language, harassing, or threatening other users.",
+          l3: "Posting pornographic, political content, or content violating Vietnamese law.",
+          l4: "Spamming listings or creating multiple fake accounts to manipulate ratings."
+        },
+        s4: {
+          title: "4. Disclaimer",
+          intro: "FindRoom is an intermediary technology platform connecting landlords and tenants. We strive to verify identities (via blue checks) and moderate listings, however:",
+          l1: "FindRoom is not legally responsible for monetary transactions or rental contracts between Landlords and Tenants.",
+          l2: "Tenants need to equip themselves with knowledge, view rooms in person, and sign clear contracts before transacting money.",
+          l3: "We do not guarantee 100% accuracy of all user-generated listings."
+        },
+        s5: {
+          title: "5. Additional Terms",
+          content: "We reserve the right to change or modify these terms at any time to suit actual situations. Changes will take effect immediately upon posting on the website."
+        }
+      },
+      privacy: {
+        title: "Privacy Policy",
+        subtitle: "Committed to protecting your personal information",
+        intro: "At FindRoom, we understand that privacy is extremely important. This policy describes in detail how we collect, use, and protect your personal information.",
+        s1: {
+          title: "1. Data Collection",
+          intro: "We only collect information necessary to operate the service:",
+          l1: "Identity Information: Name, email address, phone number, and avatar.",
+          l2: "Activity Data: Viewing history, saved rooms, and review history."
+        },
+        s2: {
+          title: "2. Scope of Information Use",
+          l1: "Account Verification: Ensuring a safe environment, eliminating fake or fraudulent accounts."
+        },
+        s3: {
+          title: "3. Information Sharing",
+          subtitle: "The 3 NOs Commitment:",
+          l1: "NO selling personal data to third parties.",
+          l2: "NO sharing information with advertising/marketing companies.",
+          l3: "NO publishing sensitive information on the website."
+        },
+        s4: {
+          title: "4. Data Security",
+          content: "All personal information is stored on secure servers. User passwords are one-way encrypted (Hashing) before being saved to the database, ensuring even FindRoom employees cannot know your password."
+        },
+        s5: {
+          title: "5. User Rights",
+          intro: "You have full control over your data:",
+          l1: "Edit: You can update personal information at any time in the \"Profile\" page.",
+          l2: "Delete Account: You have the right to request permanent deletion of your account and all related data from our system by contacting the support team."
+        }
       }
     }
   }
@@ -1088,7 +1189,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'vi',
+    lng: savedLanguage, // 2. Use the saved language
     fallbackLng: 'vi',
     interpolation: {
       escapeValue: false
