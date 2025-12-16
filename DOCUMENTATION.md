@@ -1,92 +1,41 @@
-📝 Project Release Notes
+[v1.2.0] - 2025-12-16
+
+Implemented search debouncing (500ms delay) on Map View filters to reduce API calls and eliminate marker flickering.
+
+Added scroll restoration to automatically reset window position to top on route changes.
+
+Enabled language persistence to remember user preference (English/Vietnamese) across sessions via localStorage.
+
+Updated map marker color logic to match 2025 market prices: Green (< 2.5M), Yellow (2.5-5M), Red (> 5M).
+
+Expanded navigation permissions to allow Admin accounts access to the Roommate Finder tool.
+
+Fixed a React Router crash by correctly nesting the scroll restoration component within the router context.
+
 [v1.1.0] - 2025-12-15
-Focus: Localization, Messaging System, and User Experience Polish.
 
-🚀 New Features
+Implemented full localization (i18n) for About, FAQ, Privacy Policy, and Terms of Service pages in English and Vietnamese.
 
-🌐 Internationalization (i18n):
+Restored the "Message Landlord" button functionality for tenants on Listing Detail pages.
 
-Implemented full English (en) and Vietnamese (vi) support.
+Added deep-linking capabilities to navigate directly from a listing to a specific conversation.
 
-Launched fully localized support pages: About Us, FAQ, Privacy Policy, and Terms of Service.
+Implemented self-healing backend logic to automatically detect and remove corrupt "ghost conversations".
 
-Refactored core page components to utilize the useTranslation hook for dynamic text rendering.
+Enabled optimistic UI updates for User Profile changes to reflect instantly without page reloads.
 
-💬 Messaging System:
+Fixed frontend crashes caused by blog posts referencing deleted user accounts.
 
-UI Restoration: Re-integrated the "Message Landlord" button on ListingDetail pages (visible only to tenants).
-
-Smart Navigation: Enabled deep-linking from a listing directly to a specific conversation context.
-
-Self-Healing Architecture: Implemented automated backend logic to detect and prune "ghost conversations" (corrupt data referencing deleted users), preventing 403 Access Denied loops.
-
-👤 User Experience:
-
-Instant Profile Updates: Refactored AuthContext and Profile to support optimistic UI updates, reflecting changes immediately without page reloads.
-
-Visual Cues: Added a FiClock icon to the "Stayed History" link in the navigation menu.
-
-🐛 Bug Fixes
-
-Blog & Community:
-
-Crash Prevention: Implemented safe navigation (?.) for blog posts with deleted authors to prevent runtime errors.
-
-Sorting Logic: Moved "Sort by Likes" logic to an in-memory operation to bypass MongoDB Aggregation limitations on the current environment.
-
-Pagination: Fixed data discrepancies where filtering null authors caused pagination under-fetching.
-
-Security & Navigation:
-
-ID Comparison: Refactored backend routes to safely compare MongoDB ObjectId vs String IDs.
-
-Broken Links: Fixed the "Saved Roommates" link in Navbar.tsx which previously pointed to "Saved Listings".
+Corrected navigation links for "Saved Roommates" and added visual icons to the user dropdown menu.
 
 [v1.0.5] - 2025-12-14
-Focus: Critical Infrastructure, Image Pipeline, and Deployment Stability.
 
-🛠 Critical System Repairs
+Refactored the entire image upload pipeline to fix buffer handling between Multer and Cloudinary.
 
-🖼️ Image Upload Pipeline:
+Fixed image path normalization logic to correctly handle both local uploads and remote Cloudinary URLs.
 
-Middleware Refactor: Overhauled upload.js to correctly export the uploadToCloudinary helper function without overwriting the multer instance.
+Updated server configuration to bind to 0.0.0.0 to resolve deployment timeouts on Render.
 
-Storage Logic: Switched to multer.memoryStorage() for Cloudinary uploads to ensure file buffers are available for processing.
+Added fail-fast logic for MongoDB connections to prevent the server from hanging in an unstable state.
 
-Path Normalization: Updated imageHelper.ts to correctly distinguish and format local file paths (prepending /uploads/ and API URL) vs. remote Cloudinary URLs.
-
-Fallback Handling: Implemented onError handlers for images to swap broken sources with a placeholder.
-
-☁️ Infrastructure & Deployment:
-
-Render Binding: Updated server.js to bind to 0.0.0.0 instead of localhost, resolving "No open ports detected" deployment timeouts.
-
-Database Safety: Added process.exit(1) on MongoDB connection failures to ensure the app fails fast rather than hanging.
-
-Static Serving: Configured Express to serve files from the local /uploads directory.
-
-📂 Files Modified (Cumulative)
-
-Frontend:
-
-src/i18n/config.ts
-
-src/components/Navbar.tsx
-
-src/contexts/AuthContext.tsx
-
-src/utils/imageHelper.ts
-
-src/pages/* (About, Blog, FAQ, ListingDetail, Messages, Privacy, Profile, Terms)
-
-Backend:
-
-backend/middleware/upload.js
-
-backend/routes/blogs.js
-
-backend/routes/listings.js
-
-backend/routes/messages.js
-
-backend/server.js
+Configured Express to correctly serve static files from the local storage directory.
