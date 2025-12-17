@@ -266,6 +266,70 @@ const resources = {
           content: "Chúng tôi có quyền thay đổi hoặc chỉnh sửa các điều khoản này bất cứ lúc nào để phù hợp với tình hình thực tế. Các thay đổi sẽ có hiệu lực ngay khi được đăng tải trên website."
         }
       },
+      privacy: {
+        title: "Chính sách bảo mật",
+        subtitle: "Cam kết bảo vệ thông tin cá nhân của bạn",
+        intro: "Tại FindRoom, chúng tôi hiểu rằng quyền riêng tư là vô cùng quan trọng. Chính sách này mô tả chi tiết cách chúng tôi thu thập, sử dụng và bảo vệ thông tin cá nhân của bạn.",
+        s1: {
+          title: "1. Thu thập dữ liệu",
+          intro: "Chúng tôi chỉ thu thập những thông tin cần thiết để vận hành dịch vụ:",
+          l1: "Thông tin định danh: Tên, địa chỉ email, số điện thoại và ảnh đại diện.",
+          l2: "Dữ liệu hoạt động: Lịch sử xem phòng, tin đã lưu và lịch sử đánh giá."
+        },
+        s2: {
+          title: "2. Phạm vi sử dụng thông tin",
+          l1: "Xác thực tài khoản: Đảm bảo môi trường an toàn, loại bỏ tài khoản ảo hoặc lừa đảo."
+        },
+        s3: {
+          title: "3. Chia sẻ thông tin",
+          subtitle: "Cam kết 3 KHÔNG:",
+          l1: "KHÔNG bán dữ liệu cá nhân cho bên thứ ba.",
+          l2: "KHÔNG chia sẻ thông tin cho các công ty quảng cáo/tiếp thị.",
+          l3: "KHÔNG công khai các thông tin nhạy cảm lên website."
+        },
+        s4: {
+          title: "4. Bảo mật dữ liệu",
+          content: "Mọi thông tin cá nhân được lưu trữ trên máy chủ bảo mật. Mật khẩu người dùng được mã hóa một chiều (Hashing) trước khi lưu vào cơ sở dữ liệu, đảm bảo ngay cả nhân viên FindRoom cũng không thể biết mật khẩu của bạn."
+        },
+        s5: {
+          title: "5. Quyền của người dùng",
+          intro: "Bạn có toàn quyền kiểm soát dữ liệu của mình:",
+          l1: "Chỉnh sửa: Bạn có thể cập nhật thông tin cá nhân bất cứ lúc nào trong trang \"Hồ sơ\".",
+          l2: "Xóa tài khoản: Bạn có quyền yêu cầu xóa vĩnh viễn tài khoản và mọi dữ liệu liên quan khỏi hệ thống của chúng tôi bằng cách liên hệ đội ngũ hỗ trợ."
+        }
+      },
+      faq: {
+        title: "Câu hỏi thường gặp",
+        subtitle: "Chúng tôi ở đây để giải đáp mọi thắc mắc của bạn về quy trình thuê trọ.",
+        tabs: {
+          tenant: "Cho Người thuê",
+          landlord: "Cho Chủ trọ"
+        },
+        footer: {
+          text: "Vẫn chưa tìm thấy câu trả lời?",
+          link: "Liên hệ hỗ trợ"
+        },
+        tenant: {
+          q1: "Tìm phòng trên FindRoom có mất phí không?",
+          a1: "Hoàn toàn miễn phí! FindRoom cam kết không thu bất kỳ khoản phí môi giới nào từ sinh viên/người thuê.",
+          q2: "Làm sao để tránh lừa đảo khi thuê trọ?",
+          a2: "Tuyệt đối KHÔNG chuyển khoản tiền cọc khi chưa xem phòng trực tiếp và gặp chủ trọ. Hãy ưu tiên các tin đăng từ chủ trọ có Tích xanh (Đã xác thực) và luôn ký hợp đồng rõ ràng.",
+          q3: "Tôi có thể hủy lịch hẹn xem phòng không?",
+          a3: "Có. Nếu bận, bạn vui lòng vào phần 'Quản lý lịch hẹn' để hủy hoặc nhắn tin báo cho chủ trọ. Việc này giúp duy trì độ uy tín cho tài khoản của bạn.",
+          q4: "Tính năng 'Lưu tin' để làm gì?",
+          a4: "Giúp bạn gom lại những phòng ưng ý vào một danh sách để dễ dàng so sánh giá cả, vị trí trước khi đưa ra quyết định cuối cùng."
+        },
+        landlord: {
+          q1: "Đăng tin cho thuê có mất phí không?",
+          a1: "Hiện tại, FindRoom hỗ trợ đăng tin miễn phí cho mọi chủ trọ để xây dựng cộng đồng. Trong tương lai có thể sẽ có các gói dịch vụ trả phí cao cấp (đẩy tin, tin nổi bật).",
+          q2: "Làm sao để tin đăng của tôi có nhiều người xem?",
+          a2: "Hình ảnh đẹp, sáng sủa và thông tin chi tiết là chìa khóa. Hãy điền đầy đủ các mục giá điện, nước, tiện ích và mô tả an ninh.",
+          q3: "Làm thế nào để được cấp tích xanh 'Chủ trọ uy tín'?",
+          a3: "Bạn cần cập nhật hồ sơ và tải lên ảnh Căn cước công dân (CCCD) để hệ thống xác thực. Chủ trọ có tích xanh được người thuê tin tưởng hơn gấp 3 lần.",
+          q4: "Tôi có thể ẩn tin khi đã cho thuê xong không?",
+          a4: "Được. Bạn vào phần 'Quản lý tin đăng' và đổi trạng thái sang 'Đã ẩn' hoặc 'Đã cho thuê' để không nhận thêm liên hệ."
+        }
+      },
       listingDetail: {
         notFound: "Không tìm thấy phòng",
         description: "Mô tả",
