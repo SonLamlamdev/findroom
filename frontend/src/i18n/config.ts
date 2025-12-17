@@ -230,6 +230,42 @@ const resources = {
           success: "Đã đăng tin thành công! 🎉"
         }
       },
+      terms: {
+        title: "Điều khoản sử dụng",
+        lastUpdated: "Cập nhật lần cuối: 14/12/2025",
+        intro: "Chào mừng bạn đến với FindRoom. Khi truy cập và sử dụng nền tảng này, bạn đồng ý tuân thủ các điều khoản dưới đây. Vui lòng đọc kỹ để bảo vệ quyền lợi của mình.",
+        s1: {
+          title: "1. Tài khoản người dùng",
+          l1: "Người dùng chịu trách nhiệm hoàn toàn về tính bảo mật của thông tin đăng nhập (email, mật khẩu).",
+          l2: "Bạn phải cung cấp thông tin chính xác, đầy đủ khi đăng ký (tên thật, số điện thoại liên hệ).",
+          l3: "Nghiêm cấm sử dụng tài khoản của người khác hoặc mạo danh bất kỳ cá nhân/tổ chức nào."
+        },
+        s2: {
+          title: "2. Quy định đăng tin (Dành cho Chủ trọ)",
+          l1: "Hình ảnh thực tế: Ảnh phòng trọ phải là ảnh thật, không dùng ảnh minh họa sai lệch.",
+          l2: "Giá cả minh bạch: Phải niêm yết giá thuê chính xác, bao gồm cả giá điện, nước và phí dịch vụ khác (nếu có).",
+          l3: "Thông tin chính xác: Mô tả đúng hiện trạng phòng (diện tích, nội thất, tiện nghi).",
+          l4: "FindRoom có quyền từ chối hoặc xóa tin đăng vi phạm quy định, thiếu thông tin hoặc có dấu hiệu lừa đảo mà không cần báo trước."
+        },
+        s3: {
+          title: "3. Các hành vi bị nghiêm cấm",
+          l1: "Thực hiện hành vi lừa đảo chiếm đoạt tài sản.",
+          l2: "Sử dụng ngôn từ thiếu văn hóa, quấy rối hoặc đe dọa người dùng khác.",
+          l3: "Đăng tải nội dung đồi trụy, chính trị hoặc vi phạm pháp luật Việt Nam.",
+          l4: "Spam tin đăng hoặc tạo nhiều tài khoản ảo để thao túng đánh giá."
+        },
+        s4: {
+          title: "4. Miễn trừ trách nhiệm",
+          intro: "FindRoom là nền tảng công nghệ trung gian kết nối chủ trọ và người tìm trọ. Chúng tôi nỗ lực xác thực danh tính (qua tích xanh) và kiểm duyệt tin đăng, tuy nhiên:",
+          l1: "FindRoom không chịu trách nhiệm pháp lý về các giao dịch tiền bạc hoặc hợp đồng thuê nhà giữa Chủ trọ và Người thuê.",
+          l2: "Người thuê cần tự trang bị kiến thức, xem phòng trực tiếp và ký hợp đồng rõ ràng trước khi giao dịch tiền bạc.",
+          l3: "Chúng tôi không đảm bảo tính chính xác 100% của mọi tin đăng do người dùng tạo ra."
+        },
+        s5: {
+          title: "5. Điều khoản bổ sung",
+          content: "Chúng tôi có quyền thay đổi hoặc chỉnh sửa các điều khoản này bất cứ lúc nào để phù hợp với tình hình thực tế. Các thay đổi sẽ có hiệu lực ngay khi được đăng tải trên website."
+        }
+      },
       listingDetail: {
         notFound: "Không tìm thấy phòng",
         description: "Mô tả",
